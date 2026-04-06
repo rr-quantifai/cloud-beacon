@@ -410,6 +410,7 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
   }, [modal, selIdx, salesIndex, events, analysisMode]);
 
   const mIY = formatEventImpact(modal.ratioYoY, modal.activations, yoyOk), mII = formatEventImpact(modal.ratioIMM, modal.activations, immOk);
+  const mBY = formatBaseline(modal.baselineYoY, yoyOk), mBI = formatBaseline(modal.baselineIMM, immOk);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
@@ -418,11 +419,6 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
           <div className="min-w-0 mr-4">
             <h2 className="text-base font-bold text-gray-900">{modal.eventName}</h2>
             <p className="text-xs text-gray-400 truncate">{fmtDate(modal.eventDate)} · {modal.product} · {modal.totalPartners} partner{modal.totalPartners !== 1 ? "s" : ""}</p>
-            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              <span className="text-xs text-gray-400">Historical YOY: <span className="text-gray-600 font-medium">{monthRange(modal.yoyRange)}</span></span>
-              <span className="text-xs text-gray-400">Historical IMM: <span className="text-gray-600 font-medium">{monthRange(modal.immRange, "←")}</span></span>
-              <span className="text-xs text-gray-400">Forward Period: <span className="text-gray-600 font-medium">{monthRange(modal.fwdRange)}</span></span>
-            </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
@@ -435,7 +431,7 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
                 <div><p className="text-sm font-semibold text-gray-800">{chartData.partnerID}{pNameMap[chartData.partnerID] ? " · " + pNameMap[chartData.partnerID] : ""}</p><p className="text-xs text-gray-400">{chartLabel} · Monthly</p></div>
                 <div className="flex items-center gap-1.5">{[["dots","Monthly Sales"],["others","Other Events"]].map(([k,l])=>(<button key={k} onClick={()=>setChartVis(p=>({...p,[k]:!p[k]}))} className={"px-2.5 py-1 text-xs font-medium rounded-full border transition "+(chartVis[k]?"bg-white text-blue-600 border-blue-400 hover:border-blue-500":"bg-white text-gray-400 border-gray-300 hover:border-blue-300")}>{l}</button>))}</div>
               </div></div>
-              <div className="px-4 pt-4" style={{marginBottom:"-12px"}}><ResponsiveContainer width="100%" height={280}><LineChart data={chartData.data} margin={{top:0,right:0,left:0,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6"/><XAxis dataKey="month" tickFormatter={fmtYM} tick={{fontSize:10}} interval={2} axisLine={false} padding={{left:0,right:0}}/><YAxis tick={false} axisLine={false} width={0}/><Tooltip content={<ChartTip/>}/>
+              <div className="px-4 pt-4" style={{marginBottom:"-12px"}}><ResponsiveContainer width="100%" height={280}><LineChart data={chartData.data} margin={{top:0,right:0,left:0,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6"/><XAxis dataKey="month" tick={false} axisLine={false} padding={{left:0,right:0}}/><YAxis tick={false} axisLine={false} width={0}/><Tooltip content={<ChartTip/>}/>
                 {chartVis.dots&&<Line type="monotone" dataKey="sales" stroke="#374151" strokeWidth={0} dot={{r:2.5,fill:"#374151",strokeWidth:0}} activeDot={{r:4,fill:"#374151"}} name={chartLabel}/>}
                 <Line type="monotone" dataKey="ema3" stroke="#3b82f6" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="3 EMA"/>
                 {chartData.markers.map((m,i)=>{ if (!m.isCurrent && !chartVis.others) return null; return <ReferenceLine key={i} x={m.month} stroke={PROD_COLORS[m.product]||"#6b7280"} strokeWidth={m.isCurrent?2.5:1} strokeDasharray={m.isCurrent?"0":"4 3"} opacity={m.isCurrent?1:0.6}/>; })}
@@ -453,8 +449,13 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
             <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50">
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical YOY</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical IMM</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Forward Period</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactYoY")} style={{color:mSortCol==="impactYoY"?"#1d4ed8":"#6b7280"}}>Impact YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactIMM")} style={{color:mSortCol==="impactIMM"?"#1d4ed8":"#6b7280"}}>Impact IMM</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline YOY</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline IMM</th>
               <th className="px-4 py-3"></th>
             </tr></thead><tbody className="divide-y divide-gray-100">{(()=>{
               const indexed = modal.impactPartners.map((p,i)=>({...p,origIdx:i}));
@@ -463,8 +464,13 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
                 return(<tr key={p.origIdx} className="transition hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.pid}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{pNameMap[p.pid] || ""}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pIY.color}>{pIY.text}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pII.color}>{pII.text}</td>
+                <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBY.color}>{mBY.text}</td>
+                <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBI.color}>{mBI.text}</td>
                 <td className="px-4 py-3"><button onClick={()=>setSelIdx(isSel?null:p.origIdx)} disabled={!p.found} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition border "+(!p.found?"text-gray-300 bg-white border-gray-200 cursor-not-allowed":isSel?"text-blue-600 bg-white border-blue-400 hover:border-blue-500":"text-gray-400 bg-white border-gray-300 hover:border-blue-300")}>Chart</button></td>
               </tr>);});
             })()}</tbody></table></div></div>)}
