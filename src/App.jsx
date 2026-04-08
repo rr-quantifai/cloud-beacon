@@ -407,7 +407,7 @@ const PartnerLookup = ({ salesIndex }) => {
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
           {(()=>{const ms = result ? result.months : last3;
-            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result ? (result.total > 0 ? "text-blue-600" : "text-gray-400") : "text-gray-400")}>{result ? n(result.total) : n(0)}</span></>;
+            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">TOTAL:</span><span className={"text-sm font-bold ml-1.5 " + (result ? (result.total > 0 ? "text-blue-600" : "text-gray-400") : "text-gray-400")}>{result ? n(result.total) : n(0)}</span></>;
           })()}
         </div>
       </div>
