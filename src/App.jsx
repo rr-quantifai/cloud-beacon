@@ -397,8 +397,6 @@ const PartnerLookup = ({ salesIndex }) => {
     });
     setResult({ pid: id, months, total: _.sumBy(months, "val") });
   };
-    setResult({ pid: id, months, total: _.sumBy(months, "val") });
-  };
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6">
       <div className="flex items-center gap-6">
