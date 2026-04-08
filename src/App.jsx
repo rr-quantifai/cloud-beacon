@@ -402,7 +402,7 @@ const PartnerLookup = ({ salesIndex }) => {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3 flex-shrink-0">
           <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && doFetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
-          <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} placeholder="Product" dropUp /></div>
+          <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} dropUp /></div>
           <button onClick={doFetch} disabled={!pid.trim()} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] " + (!pid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
