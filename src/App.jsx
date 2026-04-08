@@ -379,6 +379,43 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
   );
 };
 
+const PartnerLookup = ({ salesIndex }) => {
+  const [pid, setPid] = useState("");
+  const [prod, setProd] = useState("");
+  const [result, setResult] = useState(null);
+  const prods = useMemo(() => { const s = new Set(); for (const k of salesIndex.byPPM.keys()) { const p = k.split("|||"); if (p.length === 3) s.add(p[1]); } return [...s].sort(); }, [salesIndex]);
+  const fetch = () => {
+    const id = pid.trim(); if (!id) return;
+    const sorted = [...salesIndex.months].sort(); if (!sorted.length) { setResult({ pid: id, months: [], total: 0 }); return; }
+    const last3 = sorted.slice(-3);
+    const months = last3.map(ym => {
+      if (!prod) { const v = salesIndex.byPM.get(id + "|||" + ym); return { ym, val: v != null ? v : null }; }
+      const v = salesIndex.byPPM.get(id + "|||" + prod + "|||" + ym); return { ym, val: v != null ? v : null };
+    });
+    setResult({ pid: id, months, total: _.sumBy(months, m => m.val || 0) });
+  };
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6">
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && fetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
+          <select value={prod} onChange={e => setProd(e.target.value)} className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] focus:outline-none focus:border-blue-300 cursor-pointer " + (prod ? "border-blue-400 text-blue-600" : "border-gray-200 text-gray-800")}>
+            <option value="">All</option>
+            {prods.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <button onClick={() => setProd("")} className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">All</button>
+          <button onClick={fetch} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap h-[36px]">Fetch Partner Sales</button>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
+          {!result ? <span className="text-xs text-gray-400">Enter a Partner ID to view recent sales</span>
+          : result.months.length === 0 ? <span className="text-xs text-gray-400">No sales data available</span>
+          : <>{result.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(result.total)}</span></>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose }) => {
   const [selIdx, setSelIdx] = useState(null);
   const [mSortCol, setMSortCol] = useState(null);
@@ -717,6 +754,7 @@ function App() {
           {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableAgg={tableAgg} fName={fName} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
+          <PartnerLookup salesIndex={salesIndex} />
         </div>)}
       </div>
 
