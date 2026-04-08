@@ -389,10 +389,10 @@ const PartnerLookup = ({ salesIndex }) => {
     const sorted = [...salesIndex.months].sort(); if (!sorted.length) { setResult({ pid: id, months: [], total: 0 }); return; }
     const last3 = sorted.slice(-3);
     const months = last3.map(ym => {
-      if (!prod) { const v = salesIndex.byPM.get(id + "|||" + ym); return { ym, val: v != null ? v : null }; }
-      const v = salesIndex.byPPM.get(id + "|||" + prod + "|||" + ym); return { ym, val: v != null ? v : null };
+      if (!prod) { const v = salesIndex.byPM.get(id + "|||" + ym); return { ym, val: v || 0 }; }
+      const v = salesIndex.byPPM.get(id + "|||" + prod + "|||" + ym); return { ym, val: v || 0 };
     });
-    setResult({ pid: id, months, total: _.sumBy(months, m => m.val || 0) });
+    setResult({ pid: id, months, total: _.sumBy(months, "val") });
   };
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6">
@@ -403,10 +403,9 @@ const PartnerLookup = ({ salesIndex }) => {
             <option value="">All</option>
             {prods.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <button onClick={() => setProd("")} className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">All</button>
           <button onClick={fetch} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap h-[36px]">Fetch Partner Sales</button>
         </div>
-        <div className="flex items-center gap-3 flex-wrap min-w-0">
+        <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
           {!result ? <span className="text-xs text-gray-400">Enter a Partner ID to view recent sales</span>
           : result.months.length === 0 ? <span className="text-xs text-gray-400">No sales data available</span>
           : <>{result.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(result.total)}</span></>}
