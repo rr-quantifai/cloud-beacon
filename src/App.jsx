@@ -384,14 +384,19 @@ const PartnerLookup = ({ salesIndex }) => {
   const [prod, setProd] = useState("");
   const [result, setResult] = useState(null);
   const prods = useMemo(() => { const s = new Set(); for (const k of salesIndex.byPPM.keys()) { const p = k.split("|||"); if (p.length === 3) s.add(p[1]); } return [...s].sort(); }, [salesIndex]);
+  const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
+  const last3 = useMemo(() => { const ms = sortedMonths.slice(-3); return ms.map(ym => ({ ym, val: 0, label: ms.length ? n(0) : "No CSV", color: "text-gray-400" })); }, [sortedMonths]);
   const fetch = () => {
     const id = pid.trim(); if (!id) return;
-    const sorted = [...salesIndex.months].sort(); if (!sorted.length) { setResult({ pid: id, months: [], total: 0 }); return; }
-    const last3 = sorted.slice(-3);
-    const months = last3.map(ym => {
-      if (!prod) { const v = salesIndex.byPM.get(id + "|||" + ym); return { ym, val: v || 0 }; }
-      const v = salesIndex.byPPM.get(id + "|||" + prod + "|||" + ym); return { ym, val: v || 0 };
+    if (!sortedMonths.length) { setResult({ pid: id, months: last3, total: 0 }); return; }
+    const ms = sortedMonths.slice(-3);
+    const months = ms.map(ym => {
+      const k = prod ? id + "|||" + prod + "|||" + ym : id + "|||" + ym;
+      const v = (prod ? salesIndex.byPPM.get(k) : salesIndex.byPM.get(k)) || 0;
+      return { ym, val: v };
     });
+    setResult({ pid: id, months, total: _.sumBy(months, "val") });
+  };
     setResult({ pid: id, months, total: _.sumBy(months, "val") });
   };
   return (
@@ -399,16 +404,16 @@ const PartnerLookup = ({ salesIndex }) => {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 flex-shrink-0">
           <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && fetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
-          <select value={prod} onChange={e => setProd(e.target.value)} className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] focus:outline-none focus:border-blue-300 cursor-pointer " + (prod ? "border-blue-400 text-blue-600" : "border-gray-200 text-gray-800")}>
+          <select value={prod} onChange={e => setProd(e.target.value)} className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] focus:outline-none focus:border-blue-300 cursor-pointer appearance-none " + (prod ? "border-blue-400 text-blue-600" : "border-gray-200 text-gray-800")}>
             <option value="">All</option>
             {prods.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
           <button onClick={fetch} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap h-[36px]">Fetch Partner Sales</button>
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
-          {!result ? <span className="text-xs text-gray-400">Enter a Partner ID to view recent sales</span>
-          : result.months.length === 0 ? <span className="text-xs text-gray-400">No sales data available</span>
-          : <>{result.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(result.total)}</span></>}
+          {(()=>{const ms = result ? result.months : last3;
+            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}{result && <><span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(result.total)}</span></>}</>;
+          })()}
         </div>
       </div>
     </div>
