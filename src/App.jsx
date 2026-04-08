@@ -142,7 +142,7 @@ const PillSwitch = ({ items, active, onChange }) => (<div className="flex bg-gra
 /* ═══════════════════════════════════════════════════════════════════
    FILTER COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
-const MultiSel = ({ label, values, onChange, options, placeholder, disabled }) => {
+const MultiSel = ({ label, values, onChange, options, placeholder, disabled, dropUp }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => { if (!open) return; const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
@@ -153,9 +153,9 @@ const MultiSel = ({ label, values, onChange, options, placeholder, disabled }) =
     <div ref={ref} className="relative">
       {label && <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>}
       <div onClick={() => !dis && setOpen(!open)} className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] flex items-center " + (dis ? "opacity-50 cursor-not-allowed border-gray-200" : values.length > 0 ? "cursor-pointer border-blue-400 hover:border-blue-500" : "cursor-pointer border-gray-200 hover:border-blue-300")}>
-        <span className={(values.length > 0 ? "text-blue-600" : "text-gray-800") + " truncate"}>{values.length === 0 ? (placeholder || "All") : values.length === 1 ? getLabel(values[0]) : "Multiple selections"}</span>
+        <span className={(values.length > 0 ? "text-blue-600" : "text-gray-400") + " truncate"}>{values.length === 0 ? (placeholder || "All") : values.length === 1 ? getLabel(values[0]) : "Multiple selections"}</span>
       </div>
-      {open && !dis && (<div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
+      {open && !dis && (<div className={"absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 " + (dropUp ? "bottom-full mb-1" : "mt-1")}>
         {options.map(o => { const v = typeof o === "object" ? o.value : "" + o, l = typeof o === "object" ? o.label : "" + o, chk = values.includes(v);
           return (<div key={v} onClick={() => toggle(v)} className="text-xs cursor-pointer flex items-center gap-2 hover:bg-gray-50" style={{ padding: "12px" }}>
             <div className={"w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 " + (chk ? "border-blue-600" : "border-gray-300")}>{chk && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}</div>
@@ -401,7 +401,7 @@ const PartnerLookup = ({ salesIndex }) => {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3 flex-shrink-0">
           <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && doFetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
-          <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} placeholder="Product" /></div>
+          <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} placeholder="Product" dropUp /></div>
           <button onClick={doFetch} disabled={!pid.trim() || !selProds.length} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] " + (!pid.trim() || !selProds.length ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
