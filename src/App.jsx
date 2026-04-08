@@ -402,7 +402,7 @@ const PartnerLookup = ({ salesIndex }) => {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 flex-shrink-0">
           <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && fetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
-          <select value={prod} onChange={e => setProd(e.target.value)} className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] focus:outline-none focus:border-blue-300 cursor-pointer appearance-none " + (prod ? "border-blue-400 text-blue-600" : "border-gray-200 text-gray-800")}>
+          <select value={prod} onChange={e => setProd(e.target.value)} className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] focus:outline-none focus:border-blue-300 cursor-pointer appearance-none w-40 " + (prod ? "border-blue-400 text-blue-600" : "border-gray-200 text-gray-800")}>
             <option value="">All</option>
             {prods.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
@@ -410,7 +410,7 @@ const PartnerLookup = ({ salesIndex }) => {
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
           {(()=>{const ms = result ? result.months : last3;
-            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}{result && <><span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(result.total)}</span></>}</>;
+            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs text-gray-500">Total</span><span className={"text-sm font-bold ml-1.5 " + (result ? (result.total > 0 ? "text-blue-600" : "text-gray-400") : "text-gray-400")}>{result ? n(result.total) : n(0)}</span></>;
           })()}
         </div>
       </div>
