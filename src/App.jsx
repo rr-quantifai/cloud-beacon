@@ -183,7 +183,7 @@ const DateFilter = ({ tree, selected, onChange }) => {
     <div ref={ref} className="relative">
       <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
       <div onClick={() => setOpen(!open)} className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] flex items-center cursor-pointer " + (selected.length > 0 ? "border-blue-400 hover:border-blue-500" : "border-gray-200 hover:border-blue-300")}>
-        <span className={(selected.length > 0 ? "text-blue-600" : "text-gray-800") + " truncate"}>{displayText}</span>
+        <span className={(selected.length > 0 ? "text-blue-600" : "text-gray-400") + " truncate"}>{displayText}</span>
       </div>
       {open && (
         <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto" style={{ minWidth: "100%" }}>
@@ -387,11 +387,12 @@ const PartnerLookup = ({ salesIndex }) => {
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const last3 = useMemo(() => { const ms = sortedMonths.slice(-3); return ms.map(ym => ({ ym, val: 0, label: ms.length ? n(0) : "No CSV", color: "text-gray-400" })); }, [sortedMonths]);
   const doFetch = () => {
-    const id = pid.trim(); if (!id || !selProds.length) return;
+    const id = pid.trim(); if (!id) return;
     if (!sortedMonths.length) { setResult({ pid: id, months: last3, total: 0 }); return; }
     const ms = sortedMonths.slice(-3);
+    const useAll = !selProds.length;
     const months = ms.map(ym => {
-      let v = 0; for (const p of selProds) v += salesIndex.byPPM.get(id + "|||" + p + "|||" + ym) || 0;
+      const v = useAll ? (salesIndex.byPM.get(id + "|||" + ym) || 0) : selProds.reduce((s, p) => s + (salesIndex.byPPM.get(id + "|||" + p + "|||" + ym) || 0), 0);
       return { ym, val: v };
     });
     setResult({ pid: id, months, total: _.sumBy(months, "val") });
@@ -402,7 +403,7 @@ const PartnerLookup = ({ salesIndex }) => {
         <div className="flex items-center gap-3 flex-shrink-0">
           <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && doFetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
           <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} placeholder="Product" dropUp /></div>
-          <button onClick={doFetch} disabled={!pid.trim() || !selProds.length} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] " + (!pid.trim() || !selProds.length ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
+          <button onClick={doFetch} disabled={!pid.trim()} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] " + (!pid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
         </div>
         <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
           {(()=>{const ms = result ? result.months : last3;
