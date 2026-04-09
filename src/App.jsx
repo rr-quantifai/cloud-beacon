@@ -45,6 +45,14 @@ const EVENT_HEADERS = ["Event Date","Event Name","Event Type","Event Venue","Pro
 const SALES_HEADERS = ["Sale Date","Sale Value","Product","Partner ID"];
 const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (EVENT_HEADERS.every(e => h.includes(e.toLowerCase()))) return "event"; if (SALES_HEADERS.every(e => h.includes(e.toLowerCase()))) return "sales"; return null; };
 const makeDateStr = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+const TEST_EVT = ["events_2024_05.csv","events_2024_12.csv","events_2025_01.csv","events_2025_02.csv","events_2025_03.csv","events_2025_04.csv"];
+const TEST_SAL = ["sales_2023_08.csv","sales_2023_09.csv","sales_2023_10.csv","sales_2023_11.csv","sales_2023_12.csv","sales_2024_01.csv","sales_2024_02.csv","sales_2024_03.csv","sales_2024_04.csv","sales_2024_05.csv","sales_2024_06.csv","sales_2024_07.csv","sales_2024_08.csv","sales_2024_09.csv","sales_2024_10.csv","sales_2024_11.csv","sales_2024_12.csv","sales_2025_01.csv","sales_2025_02.csv","sales_2025_03.csv","sales_2025_04.csv","sales_2025_05.csv","sales_2025_06.csv","sales_2025_07.csv"];
+const MIN_DESKTOP = 1024;
+const loadTestData = async () => {
+  const load = async (name, dateCol) => { const r = await fetch("/test-data/" + name); const text = await r.text(); const rows = await parseCsv(text); const d = parseD(rows[0]?.[dateCol]); if (!d) return []; const mo = "" + (d.getUTCMonth() + 1), yr = "" + d.getUTCFullYear(); return rows.map(row => ({ ...row, _uMonth: mo, _uYear: yr })); };
+  const [evts, sals] = await Promise.all([Promise.all(TEST_EVT.map(f => load(f, "Event Date"))), Promise.all(TEST_SAL.map(f => load(f, "Sale Date")))]);
+  return { events: evts.flat(), sales: sals.flat() };
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    DATA HELPERS
@@ -220,7 +228,7 @@ const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
   </div>);
 };
 
-const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
+const UploadPanel = ({ uploadState, handleUpload, fileRef, disabled }) => {
   const st = uploadState?.status;
   const bc = st==="error"?"border-red-200":st==="partial"?"border-amber-200":st==="success"?"border-emerald-200":"border-blue-300";
   const bg = st==="error"?"bg-red-50 hover:bg-red-100":st==="partial"?"bg-amber-50 hover:bg-amber-100":st==="success"?"bg-emerald-50 hover:bg-emerald-100":"bg-blue-50 hover:bg-blue-100";
@@ -234,7 +242,7 @@ const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
         :st==="partial"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center"><span style={{color:"#d97706",fontSize:"14px",fontWeight:"bold",lineHeight:"1"}}>!</span></div><span className="text-xs font-semibold text-amber-700">{uploadState.message}</span></div>
         :st==="success"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><span className="text-xs font-semibold text-emerald-700">{uploadState.message}</span></div>
         :<><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span className="text-xs text-gray-500 mt-2">Click to upload CSVs</span></>}
-        {st!=="uploading"&&<input ref={fileRef} type="file" accept=".csv" multiple className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
+        {st!=="uploading"&&!disabled&&<input ref={fileRef} type="file" accept=".csv" multiple className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
       </label>
     </div>
   );
@@ -562,27 +570,31 @@ function App() {
   const handleNameChange = useCallback((val) => { setFName(val); if (nameTimer.current) clearTimeout(nameTimer.current); nameTimer.current = setTimeout(() => setDebouncedName(val), 300); }, []);
   const [sortCol,setSortCol]=useState(null); const [sortDir,setSortDir]=useState("desc");
   const [modal, setModal] = useState(null);
+  const [mode, setMode] = useState("test");
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= MIN_DESKTOP);
 
-  /* ─── IDB Load ─── */
-  useEffect(() => { (async () => { try {
-    const eidx = await psGet("evt_idx") || []; const eC = await Promise.all(eidx.map(k => psGet("evt:" + k))); const e = eC.flat().filter(Boolean);
-    const sidx = await psGet("sal_idx") || []; const sC = await Promise.all(sidx.map(k => psGet("sal:" + k))); const s = sC.flat().filter(Boolean);
-    if (e.length) setEvents(e); if (s.length) setSales(s);
-  } catch {} setDataLoaded(true); })(); }, []);
+  /* ─── Desktop check ─── */
+  useEffect(() => { const h = () => setIsDesktop(window.innerWidth >= MIN_DESKTOP); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
+
+  /* ─── Data Load (mode-aware) ─── */
+  useEffect(() => { setDataLoaded(false); (async () => { try {
+    if (mode === "test") { const td = await loadTestData(); setEvents(td.events); setSales(td.sales); }
+    else { const eidx = await psGet("evt_idx") || []; const eC = await Promise.all(eidx.map(k => psGet("evt:" + k))); const e = eC.flat().filter(Boolean); const sidx = await psGet("sal_idx") || []; const sC = await Promise.all(sidx.map(k => psGet("sal:" + k))); const s = sC.flat().filter(Boolean); setEvents(e); setSales(s); }
+  } catch { setEvents([]); setSales([]); } setDataLoaded(true); })(); }, [mode]);
 
   /* ─── IDB Save: Events (chunked) ─── */
-  useEffect(() => { if (!dataLoaded || !events.length) return; const t = setTimeout(async () => {
+  useEffect(() => { if (!dataLoaded || !events.length || mode !== "live") return; const t = setTimeout(async () => {
     const bm = _.groupBy(events, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("evt_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("evt:" + k); }
     for (const k of ks) await psSet("evt:" + k, bm[k]); await psSet("evt_idx", ks);
-  }, 300); return () => clearTimeout(t); }, [events, dataLoaded]);
+  }, 300); return () => clearTimeout(t); }, [events, dataLoaded, mode]);
 
   /* ─── IDB Save: Sales (chunked) ─── */
-  useEffect(() => { if (!dataLoaded || !sales.length) return; const t = setTimeout(async () => {
+  useEffect(() => { if (!dataLoaded || !sales.length || mode !== "live") return; const t = setTimeout(async () => {
     const bm = _.groupBy(sales, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("sal_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("sal:" + k); }
     for (const k of ks) await psSet("sal:" + k, bm[k]); await psSet("sal_idx", ks);
-  }, 300); return () => clearTimeout(t); }, [sales, dataLoaded]);
+  }, 300); return () => clearTimeout(t); }, [sales, dataLoaded, mode]);
 
   useEffect(() => { if (uploadState?.status==="success"||uploadState?.status==="partial"||uploadState?.status==="error") { const handler = () => { setUploadState(null); setFlashKeys([]); }; const t = setTimeout(() => window.addEventListener("click", handler, { once: true }), 300); return () => { clearTimeout(t); window.removeEventListener("click", handler); }; } }, [uploadState]);
 
@@ -721,6 +733,9 @@ function App() {
   const closeModal = () => setModal(null);
   const hasEvt = events.length > 0, hasSales = sales.length > 0;
 
+  /* ─── Desktop Gate ─── */
+  if (!isDesktop) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{fontFamily:"'Inter',system-ui,sans-serif"}}><p className="text-sm text-gray-500">Accessible only on a desktop</p></div>);
+
   /* ─── Loading ─── */
   if (!dataLoaded) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{fontFamily:"'Inter',system-ui,sans-serif"}}><div className="text-center"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><p className="text-sm text-gray-500 mb-3">Loading data</p><Dots /></div></div>);
 
@@ -730,7 +745,7 @@ function App() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200"><div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h1 className="text-lg font-bold text-gray-900 leading-tight tracking-tight">Cloud Beacon</h1><p className="text-xs text-gray-400">Event impact analyzer</p></div></div>
-        <div className="flex items-center gap-3"><span className="text-xs text-gray-400 whitespace-nowrap">{reportCounts.evt} Event CSV{reportCounts.evt!==1?"s":""} · {reportCounts.sal} Sales CSV{reportCounts.sal!==1?"s":""}</span><button onClick={clearAll} className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition whitespace-nowrap">Clear All Data</button></div>
+        <div className="flex items-center gap-3"><span className="text-xs text-gray-400 whitespace-nowrap">{reportCounts.evt} Event CSV{reportCounts.evt!==1?"s":""} · {reportCounts.sal} Sales CSV{reportCounts.sal!==1?"s":""}</span><div className="flex bg-gray-100 rounded-lg p-0.5"><button onClick={()=>setMode("test")} className={"px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div><button onClick={clearAll} disabled={mode==="test"} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap "+(mode==="test"?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button></div>
       </div></div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
@@ -744,7 +759,7 @@ function App() {
         </div>
 
         {tab==="upload"&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"24px"}}>
-          <UploadPanel uploadState={uploadState} handleUpload={handleUpload} fileRef={fileRef} />
+          <UploadPanel uploadState={uploadState} handleUpload={handleUpload} fileRef={fileRef} disabled={mode==="test"} />
           <DataCoverage coverageData={coverageData} flashKeys={flashKeys} />
         </div>)}
 
