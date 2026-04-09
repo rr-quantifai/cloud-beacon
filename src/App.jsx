@@ -228,7 +228,7 @@ const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
   </div>);
 };
 
-const UploadPanel = ({ uploadState, handleUpload, fileRef, disabled }) => {
+const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
   const st = uploadState?.status;
   const bc = st==="error"?"border-red-200":st==="partial"?"border-amber-200":st==="success"?"border-emerald-200":"border-blue-300";
   const bg = st==="error"?"bg-red-50 hover:bg-red-100":st==="partial"?"bg-amber-50 hover:bg-amber-100":st==="success"?"bg-emerald-50 hover:bg-emerald-100":"bg-blue-50 hover:bg-blue-100";
@@ -242,7 +242,7 @@ const UploadPanel = ({ uploadState, handleUpload, fileRef, disabled }) => {
         :st==="partial"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center"><span style={{color:"#d97706",fontSize:"14px",fontWeight:"bold",lineHeight:"1"}}>!</span></div><span className="text-xs font-semibold text-amber-700">{uploadState.message}</span></div>
         :st==="success"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><span className="text-xs font-semibold text-emerald-700">{uploadState.message}</span></div>
         :<><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span className="text-xs text-gray-500 mt-2">Click to upload CSVs</span></>}
-        {st!=="uploading"&&!disabled&&<input ref={fileRef} type="file" accept=".csv" multiple className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
+        {st!=="uploading"&&<input ref={fileRef} type="file" accept=".csv" multiple className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
       </label>
     </div>
   );
@@ -570,7 +570,8 @@ function App() {
   const handleNameChange = useCallback((val) => { setFName(val); if (nameTimer.current) clearTimeout(nameTimer.current); nameTimer.current = setTimeout(() => setDebouncedName(val), 300); }, []);
   const [sortCol,setSortCol]=useState(null); const [sortDir,setSortDir]=useState("desc");
   const [modal, setModal] = useState(null);
-  const [mode, setMode] = useState("test");
+  const [mode, setModeRaw] = useState("test");
+  const setMode = (m) => { setModeRaw(m); setTab("analytics"); };
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= MIN_DESKTOP);
 
   /* ─── Desktop check ─── */
@@ -745,12 +746,12 @@ function App() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200"><div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h1 className="text-lg font-bold text-gray-900 leading-tight tracking-tight">Cloud Beacon</h1><p className="text-xs text-gray-400">Event impact analyzer</p></div></div>
-        <div className="flex items-center gap-3"><span className="text-xs text-gray-400 whitespace-nowrap">{reportCounts.evt} Event CSV{reportCounts.evt!==1?"s":""} · {reportCounts.sal} Sales CSV{reportCounts.sal!==1?"s":""}</span><div className="flex bg-gray-100 rounded-lg p-0.5"><button onClick={()=>setMode("test")} className={"px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-gray-900 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div><button onClick={clearAll} disabled={mode==="test"} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap "+(mode==="test"?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button></div>
+        <div className="flex items-center gap-3"><span className="text-xs text-gray-400 whitespace-nowrap">{reportCounts.evt} Event CSV{reportCounts.evt!==1?"s":""} · {reportCounts.sal} Sales CSV{reportCounts.sal!==1?"s":""}</span><button onClick={clearAll} disabled={mode==="test"} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(mode==="test"?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button><div className="flex bg-gray-100 rounded-lg p-0.5 h-[32px]"><button onClick={()=>setMode("test")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-red-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-emerald-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div></div>
       </div></div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex items-center justify-between mb-6">
-          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} />
+          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={v=>{if(mode==="test"&&v==="upload")return;setTab(v);}} />
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
             <TabSwitch items={[["yoy","YOY"],["imm","IMM"]]} active={impactMode} onChange={setImpactMode} />
@@ -759,7 +760,7 @@ function App() {
         </div>
 
         {tab==="upload"&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"24px"}}>
-          <UploadPanel uploadState={uploadState} handleUpload={handleUpload} fileRef={fileRef} disabled={mode==="test"} />
+          <UploadPanel uploadState={uploadState} handleUpload={handleUpload} fileRef={fileRef} />
           <DataCoverage coverageData={coverageData} flashKeys={flashKeys} />
         </div>)}
 
@@ -768,7 +769,7 @@ function App() {
           {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableAgg={tableAgg} fName={fName} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
-          <PartnerLookup salesIndex={salesIndex} />
+          {hasEvt&&<PartnerLookup salesIndex={salesIndex} />}
         </div>)}
       </div>
 
