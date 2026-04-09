@@ -144,7 +144,7 @@ const HL = (text, q) => { if (!q) return text; const p = [], lo = text.toLowerCa
    ═══════════════════════════════════════════════════════════════════ */
 const Dots = () => (<span className="inline-flex items-center gap-1">{[0,1,2].map(i=><span key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300" style={{animation:"dotPulse 1.2s infinite",animationDelay:i*0.2+"s"}}/>)}<style>{`@keyframes dotPulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style></span>);
 const Badge = ({ text, className }) => <span className={"inline-block px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap " + className}>{text}</span>;
-const TabSwitch = ({ items, active, onChange }) => (<div className="flex gap-1 bg-gray-100 rounded-lg p-1">{items.map(([k, l]) => (<button key={k} onClick={() => onChange(k)} className={"px-4 py-2 text-sm font-medium rounded-md transition whitespace-nowrap " + (active === k ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}>{l}</button>))}</div>);
+const TabSwitch = ({ items, active, onChange, disabledKeys }) => (<div className="flex gap-1 bg-gray-100 rounded-lg p-1">{items.map(([k, l]) => { const dis = disabledKeys?.includes(k); return <button key={k} onClick={() => !dis && onChange(k)} className={"px-4 py-2 text-sm font-medium rounded-md transition whitespace-nowrap " + (active === k ? "bg-white text-gray-900 shadow-sm" : dis ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>{l}</button>; })}</div>);
 const PillSwitch = ({ items, active, onChange }) => (<div className="flex bg-gray-100 rounded-lg p-0.5 w-full">{items.map(([k, l]) => (<button key={k} onClick={() => onChange(k)} className={"flex-1 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-center " + (active === k ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600")}>{l}</button>))}</div>);
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -751,7 +751,7 @@ function App() {
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex items-center justify-between mb-6">
-          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={v=>{if(mode==="test"&&v==="upload")return;setTab(v);}} />
+          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} disabledKeys={mode==="test"?["upload"]:undefined} />
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
             <TabSwitch items={[["yoy","YOY"],["imm","IMM"]]} active={impactMode} onChange={setImpactMode} />
