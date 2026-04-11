@@ -347,7 +347,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <span className="text-gray-300 mx-1">·</span>
         <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Next</button>
         <span className="text-gray-300 mx-1">·</span>
-        <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Last</button>
+        <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"pl-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Last</button>
       </div>
     </div></div>
     <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"1700px"}}><thead><tr className="bg-gray-50 text-left">
