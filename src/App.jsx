@@ -338,13 +338,13 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <span className="text-sm font-semibold text-gray-700">{sortedGrouped.length} Event{sortedGrouped.length!==1?"s":""}</span>
         {tableAgg&&<><span className="text-gray-300">·</span><span className="text-xs text-gray-400">Sorted Aggregate</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm font-bold ml-1 "+tableAgg.yoy.color}>{tableAgg.yoy.text}</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm font-bold ml-1 "+tableAgg.imm.color}>{tableAgg.imm.text}</span></>}
       </div>
-      {totalPages > 1 && <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-1.5 flex-shrink-0">
         <span className="text-xs text-gray-400">{safePage + 1} / {totalPages}</span>
         <button onClick={() => setPage(0)} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>First</button>
         <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Prev</button>
         <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Next</button>
         <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Last</button>
-      </div>}
+      </div>
     </div></div>
     <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"1700px"}}><thead><tr className="bg-gray-50 text-left">
       <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
