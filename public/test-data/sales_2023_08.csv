@@ -1,19 +1,19 @@
-Sale Date,Sale Value,Product,Partner ID
-2023-08-05,1700,Cloud,P001
-2023-08-15,1600,Cloud,P001
-2023-08-25,1650,Cloud,P001
-2023-08-10,950,AI,P001
-2023-08-20,900,AI,P001
-2023-08-05,510,Security,P001
-2023-08-08,950,Cloud,P002
-2023-08-18,900,Cloud,P002
-2023-08-28,930,Cloud,P002
-2023-08-12,790,AI,P004
-2023-08-22,740,AI,P004
-2023-08-07,920,Cloud,P005
-2023-08-17,950,Cloud,P005
-2023-08-12,630,AI,P005
-2023-08-10,580,Cloud,P006
-2023-08-20,600,Cloud,P006
-2023-08-10,600,Cloud,P007
-2023-08-22,620,Cloud,P007
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2023-08-02,7000,BizApps,P007,Quantum Analytics
+2023-08-03,18000,Cloud,P004,Pinnacle Group
+2023-08-05,15000,Cloud,P001,Acme Corporation
+2023-08-07,14000,Security,P009,Shield Force LLC
+2023-08-08,12000,Cloud,P002,Gulf Enterprises
+2023-08-10,7000,Security,P005,Orion Digital
+2023-08-11,5000,AI,P001,Neuralnet LLC
+2023-08-12,8000,Cloud,P001,Techville Limited
+2023-08-14,9000,BizApps,P010,Horizon Partners
+2023-08-15,9000,Cloud,P002,Meridian Trading
+2023-08-18,10000,Security,P009,Cyber Edge LLC
+2023-08-19,16000,Cloud,P002,Gulf Enterprises
+2023-08-20,11000,Cloud,P004,Pinnacle Group
+2023-08-22,6000,Security,P005,Vertex Labs
+2023-08-25,8000,Security,P009,Shield Force LLC
+2023-08-25,13000,BizApps,P010,Summit Digital
+2023-08-28,11000,Modern Work,P010,Cloud Nine FZE LLC
+2023-08-30,6000,Cloud,P004,Pinnacle Group

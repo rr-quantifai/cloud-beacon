@@ -1,11 +1,12 @@
-Sale Date,Sale Value,Product,Partner ID
-2024-04-05,1500,Cloud,P001
-2024-04-15,1250,Cloud,P001
-2024-04-10,770,AI,P001
-2024-04-05,430,Security,P001
-2024-04-08,1080,Cloud,P002
-2024-04-15,980,Cloud,P002
-2024-04-12,610,AI,P004
-2024-04-07,970,Cloud,P005
-2024-04-12,560,AI,P005
-2024-04-10,650,Cloud,P006
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2024-04-02,14000,Cloud,P001,Acme Corporation
+2024-04-05,10000,Cloud,P002,Gulf Enterprises
+2024-04-08,12000,BizApps,P010,Horizon Partners
+2024-04-10,13000,Cloud,P004,Pinnacle Group
+2024-04-11,9000,AI,P001,Techville Limited
+2024-04-14,7000,Security,P009,Cyber Edge LLC
+2024-04-16,6000,Cloud,P002,Meridian Trading
+2024-04-18,7000,Cloud,P001,DataPro Systems
+2024-04-22,8000,BizApps,P010,Summit Digital
+2024-04-25,11000,Security,P009,Shield Force LLC
+2024-04-28,9000,Modern Work,P010,Cloud Nine FZE LLC

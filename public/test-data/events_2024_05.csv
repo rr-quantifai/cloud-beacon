@@ -1,4 +1,8 @@
-Event Date,Event Name,Event Type,Event Venue,Product,Country,Provider,Partner ID,Partner Name,Attendee Name
-2024-05-12,Cloud Summit,Online,Cloud Champion,Cloud,UAE,Self,P001,Ingram Micro LLC,Alice
-2024-05-12,Cloud Summit,Online,Cloud Champion,Cloud,UAE,Self,P001,Ingram Micro LLC,Bob
-2024-05-12,Cloud Summit,Online,Cloud Champion,Cloud,UAE,Self,P007,Cisco Systems LLC,Grace
+Event Date,Event Name,Event Type,Event Venue,Product,Country,Provider,Partner ID,Partner Name,Attendee Name,Attendance
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P001,Alpha Corporation,John Smith,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P001,Alpha Corporation,Jane Doe,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P002,Beta Incorporated,Bob Wilson,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P003,Gamma LLC,Charlie Brown,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P004,Delta Company,Dave Miller,No
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P005,Epsilon Limited,Eve Johnson,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P006,Zeta Corporation,Frank Davis,No

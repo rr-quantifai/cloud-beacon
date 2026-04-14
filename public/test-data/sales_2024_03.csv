@@ -1,17 +1,17 @@
-Sale Date,Sale Value,Product,Partner ID
-2024-03-05,1450,Cloud,P001
-2024-03-15,1350,Cloud,P001
-2024-03-25,1400,Cloud,P001
-2024-03-10,800,AI,P001
-2024-03-20,750,AI,P001
-2024-03-05,420,Security,P001
-2024-03-08,1100,Cloud,P002
-2024-03-18,1000,Cloud,P002
-2024-03-28,1050,Cloud,P002
-2024-03-12,640,AI,P004
-2024-03-22,600,AI,P004
-2024-03-07,960,Cloud,P005
-2024-03-17,940,Cloud,P005
-2024-03-12,580,AI,P005
-2024-03-10,670,Cloud,P006
-2024-03-20,640,Cloud,P006
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2024-03-03,15000,Cloud,P004,Pinnacle Group
+2024-03-04,17000,Cloud,P001,Acme Corporation
+2024-03-06,12000,Cloud,P002,Gulf Enterprises
+2024-03-08,11000,Security,P009,Shield Force LLC
+2024-03-10,7000,BizApps,P010,Summit Digital
+2024-03-12,8000,Cloud,P001,Techville Limited
+2024-03-14,6000,AI,P007,Quantum Analytics
+2024-03-15,7000,Cloud,P002,Meridian Trading
+2024-03-18,8000,Security,P009,Cyber Edge LLC
+2024-03-19,10000,AI,P001,Neuralnet LLC
+2024-03-21,9000,Cloud,P004,Pinnacle Group
+2024-03-22,5000,Cloud,P001,Datapro Systems
+2024-03-25,13000,BizApps,P010,Horizon Partners
+2024-03-26,10000,Cloud,P004,Pinnacle Group
+2024-03-28,9000,Modern Work,P010,Cloud Nine FZE LLC
+2024-03-30,8000,Cloud,P002,Gulf Enterprises

@@ -1,13 +1,11 @@
-Sale Date,Sale Value,Product,Partner ID
-2025-04-05,2500,Cloud,P001
-2025-04-15,2700,Cloud,P001
-2025-04-10,1600,AI,P001
-2025-04-05,560,Security,P001
-2025-04-08,700,Cloud,P002
-2025-04-15,680,Cloud,P002
-2025-04-10,900,Cloud,P003
-2025-04-12,1150,AI,P004
-2025-04-07,1050,Cloud,P005
-2025-04-12,690,AI,P005
-2025-04-10,620,Cloud,P006
-2025-04-10,700,Cloud,P007
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2025-04-03,22000,Cloud,P001,Acme Corporation
+2025-04-05,10000,Cloud,P003,Novatech Solutions
+2025-04-08,15000,BizApps,P010,Horizon Partners
+2025-04-10,9000,Cloud,P001,Datapro Systems
+2025-04-14,8000,Security,P005,Vertex Labs
+2025-04-18,12000,Security,P001,Acme Corporation
+2025-04-20,11000,BizApps,P010,Summit Digital
+2025-04-22,14000,Security,P009,Shield Force LLC
+2025-04-25,9000,Security,P009,Cyber Edge LLC
+2025-04-28,8000,Modern Work,P010,Cloud Nine FZE LLC

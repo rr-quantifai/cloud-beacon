@@ -1,11 +1,11 @@
-Sale Date,Sale Value,Product,Partner ID
-2023-11-05,1500,Cloud,P001
-2023-11-15,1250,Cloud,P001
-2023-11-10,770,AI,P001
-2023-11-05,430,Security,P001
-2023-11-08,1080,Cloud,P002
-2023-11-15,980,Cloud,P002
-2023-11-12,610,AI,P004
-2023-11-07,970,Cloud,P005
-2023-11-12,560,AI,P005
-2023-11-10,650,Cloud,P006
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2023-11-03,9000,Security,P005,Orion Digital
+2023-11-05,13000,Cloud,P001,Acme Corporation
+2023-11-08,10000,Cloud,P002,Gulf Enterprises
+2023-11-12,12000,Security,P009,Shield Force LLC
+2023-11-15,11000,BizApps,P010,Horizon Partners
+2023-11-18,7000,AI,P001,Techville Limited
+2023-11-20,14000,Cloud,P004,Pinnacle Group
+2023-11-22,7000,Security,P009,Cyber Edge LLC
+2023-11-25,9000,Modern Work,P010,Summit Digital
+2023-11-28,6000,BizApps,P007,Quantum Analytics

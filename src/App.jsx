@@ -26,6 +26,7 @@ const parseCsv = (file) => new Promise((res, rej) => {
 });
 const parseD = (s) => { if (!s) return null; const d = new Date(s + "T00:00:00Z"); return isNaN(d) ? null : d; };
 const calcEMA = (vals, p) => { const k = 2 / (p + 1); const r = []; let e = null; for (const v of vals) { e = e === null ? v : v * k + e * (1 - k); r.push(Math.round(e * 100) / 100); } return r; };
+const isYes = (v) => (v || "").trim().toLowerCase() === "yes";
 
 /* Month-key helpers */
 const mkKey = (y, m) => String(y) + "-" + String(m).padStart(2, "0");
@@ -39,14 +40,19 @@ const getIMMMonths = (eYM, n) => Array.from({ length: n }, (_, i) => offsetMonth
    CONSTANTS
    ═══════════════════════════════════════════════════════════════════ */
 const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const PROD_COLORS = { AI: "#8b5cf6", "Business Central": "#059669", Cloud: "#3b82f6", Security: "#f59e0b" };
-const PROD_BADGE = { AI: "bg-purple-100 text-purple-700", "Business Central": "bg-emerald-100 text-emerald-700", Cloud: "bg-blue-100 text-blue-700", Security: "bg-amber-100 text-amber-700" };
-const EVENT_HEADERS = ["Event Date","Event Name","Event Type","Event Venue","Product","Country","Provider","Partner ID","Partner Name","Attendee Name"];
-const SALES_HEADERS = ["Sale Date","Sale Value","Product","Partner ID"];
-const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (EVENT_HEADERS.every(e => h.includes(e.toLowerCase()))) return "event"; if (SALES_HEADERS.every(e => h.includes(e.toLowerCase()))) return "sales"; return null; };
+const PROD_COLORS = { AI: "#8b5cf6", BizApps: "#059669", Cloud: "#3b82f6", "Modern Work": "#ec4899", Security: "#f59e0b" };
+const PROD_BADGE = { AI: "bg-purple-100 text-purple-700", BizApps: "bg-emerald-100 text-emerald-700", Cloud: "bg-blue-100 text-blue-700", "Modern Work": "bg-pink-100 text-pink-700", Security: "bg-amber-100 text-amber-700" };
+const EVENT_HEADERS = ["Event Date","Event Name","Event Type","Event Venue","Product","Country","Provider","Partner ID","Partner Name","Attendee Name","Attendance"];
+const SALES_HEADERS = ["Sale Date","Sale Value","Product","Partner ID","Customer Name"];
+const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (h.length === EVENT_HEADERS.length && EVENT_HEADERS.every(e => h.includes(e.toLowerCase()))) return "event"; if (h.length === SALES_HEADERS.length && SALES_HEADERS.every(e => h.includes(e.toLowerCase()))) return "sales"; return null; };
+const VALID_PRODUCTS = new Set(["AI", "BizApps", "Cloud", "Modern Work", "Security"]);
+const VALID_EVENT_TYPES = new Set(["Online", "Offline"]);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SALE_VALUE_RE = /^\d+(\.\d+)?$/;
+const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; if (!SALE_VALUE_RE.test(r["Sale Value"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
 const makeDateStr = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 const TEST_EVT = ["events_2024_05.csv","events_2024_12.csv","events_2025_01.csv","events_2025_02.csv","events_2025_03.csv","events_2025_04.csv"];
-const TEST_SAL = ["sales_2023_08.csv","sales_2023_09.csv","sales_2023_10.csv","sales_2023_11.csv","sales_2023_12.csv","sales_2024_01.csv","sales_2024_02.csv","sales_2024_03.csv","sales_2024_04.csv","sales_2024_05.csv","sales_2024_06.csv","sales_2024_07.csv","sales_2024_08.csv","sales_2024_09.csv","sales_2024_10.csv","sales_2024_11.csv","sales_2024_12.csv","sales_2025_01.csv","sales_2025_02.csv","sales_2025_03.csv","sales_2025_04.csv","sales_2025_05.csv","sales_2025_06.csv","sales_2025_07.csv"];
+const TEST_SAL = ["sales_2023_07.csv","sales_2023_08.csv","sales_2023_09.csv","sales_2023_10.csv","sales_2023_11.csv","sales_2023_12.csv","sales_2024_01.csv","sales_2024_02.csv","sales_2024_03.csv","sales_2024_04.csv","sales_2024_05.csv","sales_2024_06.csv","sales_2024_07.csv","sales_2024_08.csv","sales_2024_09.csv","sales_2024_10.csv","sales_2024_11.csv","sales_2024_12.csv","sales_2025_01.csv","sales_2025_02.csv","sales_2025_03.csv","sales_2025_04.csv","sales_2025_05.csv","sales_2025_06.csv","sales_2025_07.csv"];
 const MIN_DESKTOP = 1024;
 const loadTestData = async () => {
   const load = async (name, dateCol) => { const r = await fetch("/test-data/" + name); const text = await r.text(); const rows = await parseCsv(text); const d = parseD(rows[0]?.[dateCol]); if (!d) return []; const mo = "" + (d.getUTCMonth() + 1), yr = "" + d.getUTCFullYear(); return rows.map(row => ({ ...row, _uMonth: mo, _uYear: yr })); };
@@ -61,8 +67,20 @@ const groupEvents = (evts) => {
   const g = _.groupBy(evts, r => JSON.stringify([r["Event Name"], r["Event Date"], r["Product"]]));
   return Object.entries(g).map(([key, rows]) => {
     const [name, date, prod] = JSON.parse(key);
-    const partners = _.uniqBy(rows, r => (r["Partner ID"] || "").trim());
-    return { key, eventName: name, eventDate: date, product: prod, eventType: rows[0]?.["Event Type"], venue: rows[0]?.["Event Venue"], country: rows[0]?.["Country"], provider: rows[0]?.["Provider"], totalPartners: partners.length, totalAttendees: rows.length, partners: partners.map(r => r["Partner ID"]).filter(Boolean), rows };
+    const pidAtt = {};
+    const partnerDetails = {};
+    for (const r of rows) {
+      const pid = (r["Partner ID"] || "").trim(); if (!pid) continue;
+      if (!partnerDetails[pid]) partnerDetails[pid] = { regs: 0, att: 0 };
+      partnerDetails[pid].regs++;
+      const yes = isYes(r["Attendance"]);
+      if (yes) { partnerDetails[pid].att++; pidAtt[pid] = true; }
+      else if (!(pid in pidAtt)) pidAtt[pid] = false;
+    }
+    const attendingPIDs = Object.keys(pidAtt).filter(p => pidAtt[p]);
+    const nonAttendingPIDs = Object.keys(pidAtt).filter(p => !pidAtt[p]);
+    const yesRows = rows.filter(r => isYes(r["Attendance"]));
+    return { key, eventName: name, eventDate: date, product: prod, eventType: rows[0]?.["Event Type"], venue: rows[0]?.["Event Venue"], country: rows[0]?.["Country"], provider: rows[0]?.["Provider"], totalRegistrations: Object.keys(pidAtt).length, totalPartners: attendingPIDs.length, totalAttendees: yesRows.length, baselineUniverse: nonAttendingPIDs.length, partners: attendingPIDs, nonAttendingPartners: nonAttendingPIDs, partnerDetails, rows };
   });
 };
 
@@ -71,7 +89,9 @@ const groupEvents = (evts) => {
    ═══════════════════════════════════════════════════════════════════ */
 const makeNull = () => ({ ratioYoY: null, ratioIMM: null, activations: 0, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, impactPartners: [], eventStatus: null, fwdRange: null, yoyRange: null, immRange: null, fwdAvail: false, yoyAvail: false, immAvail: false });
 
-const calcEventImpact = (group, idx, mode, fwdN) => {
+const idxGet = (idx, mode, vm, pid, prod, ym) => { const k = mode === "total" ? pid + "|||" + ym : pid + "|||" + prod + "|||" + ym; return (vm === "customers" ? (mode === "total" ? idx.custPM.get(k) : idx.custPPM.get(k)) : (mode === "total" ? idx.byPM.get(k) : idx.byPPM.get(k))) || 0; };
+
+const calcEventImpact = (group, idx, mode, fwdN, vm) => {
   const eYM = getEventMonth(group.eventDate);
   if (!eYM) return makeNull();
   const fwd = getFwdMonths(eYM, fwdN), yoy = getYoYMonths(fwd), imm = getIMMMonths(eYM, fwdN);
@@ -79,7 +99,7 @@ const calcEventImpact = (group, idx, mode, fwdN) => {
   if (!fwdAvail) return { ...makeNull(), fwdRange: fwd, yoyRange: yoy, immRange: imm };
   const yoyAvail = yoy.every(ym => idx.months.has(ym));
   const immAvail = imm.every(ym => idx.months.has(ym));
-  const sum = (pid, ms) => { let s = 0; for (const ym of ms) { const k = mode === "total" ? pid + "|||" + ym : pid + "|||" + group.product + "|||" + ym; s += (mode === "total" ? idx.byPM.get(k) : idx.byPPM.get(k)) || 0; } return s; };
+  const sum = (pid, ms) => { let s = 0; for (const ym of ms) s += idxGet(idx, mode, vm, pid, group.product, ym); return s; };
   const partners = []; let hY = 0, fY = 0, hI = 0, fI = 0, act = 0;
   for (const pid of group.partners) {
     const first = idx.partnerFirst.get(pid);
@@ -95,24 +115,23 @@ const calcEventImpact = (group, idx, mode, fwdN) => {
   return { ratioYoY: hY > 0 ? fY / hY : null, ratioIMM: hI > 0 ? fI / hI : null, activations: act, histYoY: hY, fwdYoY: fY, histIMM: hI, fwdIMM: fI, impactPartners: partners, eventStatus: "ok", fwdRange: fwd, yoyRange: yoy, immRange: imm, fwdAvail: true, yoyAvail, immAvail };
 };
 
-const calcBaselines = (group, idx, mode, fwdN) => {
+const calcBaselines = (group, idx, mode, fwdN, vm) => {
   const eYM = getEventMonth(group.eventDate);
   if (!eYM) return { yoy: null, imm: null };
   const fwd = getFwdMonths(eYM, fwdN);
   if (!fwd.every(ym => idx.months.has(ym))) return { yoy: null, imm: null };
   const yoy = getYoYMonths(fwd), imm = getIMMMonths(eYM, fwdN);
   const yoyAvail = yoy.every(ym => idx.months.has(ym)), immAvail = imm.every(ym => idx.months.has(ym));
-  const sumT = (ms) => { let s = 0; for (const ym of ms) s += (mode === "total" ? idx.totalM.get(ym) : idx.totalPM.get(group.product + "|||" + ym)) || 0; return s; };
-  const sumP = (pid, ms) => { let s = 0; for (const ym of ms) { const k = mode === "total" ? pid + "|||" + ym : pid + "|||" + group.product + "|||" + ym; s += (mode === "total" ? idx.byPM.get(k) : idx.byPPM.get(k)) || 0; } return s; };
-  const tF = sumT(fwd); let aF = 0, aY = 0, aI = 0;
-  for (const pid of group.partners) { aF += sumP(pid, fwd); if (yoyAvail) aY += sumP(pid, yoy); if (immAvail) aI += sumP(pid, imm); }
-  const tY = yoyAvail ? sumT(yoy) : 0, tI = immAvail ? sumT(imm) : 0;
-  return { yoy: yoyAvail && tY - aY > 0 ? (tF - aF) / (tY - aY) : null, imm: immAvail && tI - aI > 0 ? (tF - aF) / (tI - aI) : null };
+  const sum = (pid, ms) => { let s = 0; for (const ym of ms) s += idxGet(idx, mode, vm, pid, group.product, ym); return s; };
+  let bF = 0, bY = 0, bI = 0;
+  for (const pid of group.nonAttendingPartners) { bF += sum(pid, fwd); if (yoyAvail) bY += sum(pid, yoy); if (immAvail) bI += sum(pid, imm); }
+  return { yoy: yoyAvail && bY > 0 ? bF / bY : null, imm: immAvail && bI > 0 ? bF / bI : null };
 };
 
 /* ═══════════════════════════════════════════════════════════════════
    DISPLAY HELPERS
    ═══════════════════════════════════════════════════════════════════ */
+const descTie = (valFn, dateFn) => (a, b) => { const d = valFn(b) - valFn(a); return d !== 0 ? d : (new Date(dateFn(b)) - new Date(dateFn(a))); };
 const DASH = { text: "—", color: "text-gray-400" };
 const NO_CSV = { text: "No CSV", color: "text-gray-400" };
 const n = (v) => v == null ? "—" : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -218,7 +237,7 @@ const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !p
 const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
   const isImpact = metric === "impact", hasData = data && data.length > 0;
   const rk = impactMode === "imm" ? "avgRatioIMM" : "avgRatioYoY";
-  const sorted = hasData ? [...data].sort((a,b) => isImpact ? ((b[rk]||-1)-(a[rk]||-1)) : metric==="turnout" ? b.totalPartners-a.totalPartners : b.totalAttendees-a.totalAttendees) : [];
+  const sorted = hasData ? [...data].sort(descTie(x => isImpact ? (x[rk] || -1) : metric === "turnout" ? x.totalPartners : x.totalAttendees, x => x.latestDate)) : [];
   const top = sorted[0];
   const val = !hasData || data.length < 2 ? "—" : isImpact ? (top?.[rk] != null && isFinite(top[rk]) ? top[rk].toFixed(2) + "x" : "—") : metric === "turnout" ? (top?.totalPartners||0) + " partners" : (top?.totalAttendees||0) + " attendees";
   const vc = !hasData || data.length < 2 || (isImpact && top?.[rk] == null) ? "text-gray-400" : isImpact ? (top[rk] >= 1.5 ? "text-emerald-600" : top[rk] >= 1 ? "text-emerald-500" : top[rk] >= 0.8 ? "text-amber-500" : "text-red-500") : "text-blue-600";
@@ -331,6 +350,8 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
   const safePage = Math.min(page, totalPages - 1);
   const pageData = sortedGrouped.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   useEffect(() => setPage(0), [sortedGrouped]);
+  const SH = (col, label) => <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition whitespace-nowrap" onClick={()=>toggleSort(col)} style={{color:sortCol===col?"#1d4ed8":"#6b7280"}}>{label}</th>;
+  const TH = (label) => <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{label}</th>;
   return (
   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
     <div className="p-4 border-b border-gray-100"><div className="flex items-center justify-between">
@@ -350,19 +371,12 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"pl-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Last</button>
       </div>
     </div></div>
-    <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"1700px"}}><thead><tr className="bg-gray-50 text-left">
-      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleSort("date")} style={{color:sortCol==="date"?"#1d4ed8":"#6b7280"}}>Date</th>
-      {["Product","Type","Venue","Country","Provider"].map(h=><th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>)}
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleSort("partners")} style={{color:sortCol==="partners"?"#1d4ed8":"#6b7280"}}>Partners</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleSort("attendees")} style={{color:sortCol==="attendees"?"#1d4ed8":"#6b7280"}}>Attendees</th>
-      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical YOY</th>
-      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical IMM</th>
-      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Forward Period</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition whitespace-nowrap" onClick={()=>toggleSort("ratioYoY")} style={{color:sortCol==="ratioYoY"?"#1d4ed8":"#6b7280"}}>Impact YOY</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition whitespace-nowrap" onClick={()=>toggleSort("ratioIMM")} style={{color:sortCol==="ratioIMM"?"#1d4ed8":"#6b7280"}}>Impact IMM</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition whitespace-nowrap" onClick={()=>toggleSort("blYoY")} style={{color:sortCol==="blYoY"?"#1d4ed8":"#6b7280"}}>Baseline YOY</th>
-      <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 transition whitespace-nowrap" onClick={()=>toggleSort("blIMM")} style={{color:sortCol==="blIMM"?"#1d4ed8":"#6b7280"}}>Baseline IMM</th>
+    <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"2000px"}}><thead><tr className="bg-gray-50 text-left">
+      {TH("Name")}{SH("date","Date")}{["Product","Type","Venue","Country","Provider"].map(h=><th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>)}
+      {SH("registrations","Registrations")}{SH("partners","Partners")}{SH("attendees","Attendees")}
+      {TH("Historical YOY")}{TH("Historical IMM")}{TH("Forward Period")}
+      {SH("ratioYoY","Impact YOY")}{SH("ratioIMM","Impact IMM")}
+      {SH("blUniverse","BL Universe")}{SH("blYoY","Baseline YOY")}{SH("blIMM","Baseline IMM")}
       <th className="px-4 py-3"></th>
     </tr></thead><tbody className="divide-y divide-gray-100">{pageData.map(g => {
       const yoyOk = g.fwdAvail && g.yoyAvail, immOk = g.fwdAvail && g.immAvail;
@@ -376,6 +390,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{g.venue}</td>
         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{g.country}</td>
         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{g.provider}</td>
+        <td className="px-4 py-3 font-semibold text-gray-900">{g.totalRegistrations}</td>
         <td className="px-4 py-3 font-semibold text-gray-900">{g.totalPartners}</td>
         <td className="px-4 py-3 font-semibold text-gray-900">{g.totalAttendees}</td>
         <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(g.yoyRange)}</td>
@@ -383,6 +398,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(g.fwdRange)}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+iY.color}>{iY.text}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+iI.color}>{iI.text}</td>
+        <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{g.baselineUniverse}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+bY.color}>{bY.text}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+bI.color}>{bI.text}</td>
         <td className="px-4 py-3"><button onClick={()=>openModal(g)} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">Partner Analysis</button></td>
@@ -391,7 +407,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
   );
 };
 
-const PartnerLookup = ({ salesIndex }) => {
+const PartnerLookup = ({ salesIndex, valueMode }) => {
   const [pid, setPid] = useState("");
   const [selProds, setSelProds] = useState([]);
   const [result, setResult] = useState(null);
@@ -403,8 +419,10 @@ const PartnerLookup = ({ salesIndex }) => {
     if (!sortedMonths.length) { setResult({ pid: id, months: last3, total: 0 }); return; }
     const ms = sortedMonths.slice(-3);
     const useAll = !selProds.length;
+    const vMap = valueMode === "customers" ? salesIndex.custPM : salesIndex.byPM;
+    const vpMap = valueMode === "customers" ? salesIndex.custPPM : salesIndex.byPPM;
     const months = ms.map(ym => {
-      const v = useAll ? (salesIndex.byPM.get(id + "|||" + ym) || 0) : selProds.reduce((s, p) => s + (salesIndex.byPPM.get(id + "|||" + p + "|||" + ym) || 0), 0);
+      const v = useAll ? (vMap.get(id + "|||" + ym) || 0) : selProds.reduce((s, p) => s + (vpMap.get(id + "|||" + p + "|||" + ym) || 0), 0);
       return { ym, val: v };
     });
     setResult({ pid: id, months, total: _.sumBy(months, "val") });
@@ -427,7 +445,7 @@ const PartnerLookup = ({ salesIndex }) => {
   );
 };
 
-const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose }) => {
+const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMode, onClose }) => {
   const [selIdx, setSelIdx] = useState(null);
   const [mSortCol, setMSortCol] = useState(null);
   const [mSortDir, setMSortDir] = useState("desc");
@@ -445,8 +463,7 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
     const pEvtByMonth = {};
     for (const ev of events) { if (ev["Partner ID"] !== p.pid) continue; const eym = getEventMonth(ev["Event Date"]); if (!eym) continue; if (!pEvtByMonth[eym]) pEvtByMonth[eym] = []; pEvtByMonth[eym].push(ev); }
     const data = months.map(ym => {
-      const k = analysisMode === "total" ? p.pid + "|||" + ym : p.pid + "|||" + modal.product + "|||" + ym;
-      const val = (analysisMode === "total" ? salesIndex.byPM.get(k) : salesIndex.byPPM.get(k)) || 0;
+      const val = idxGet(salesIndex, analysisMode, valueMode, p.pid, modal.product, ym);
       const pE = pEvtByMonth[ym] || [];
       const evts = _.uniqBy(pE.map(ev => ({ name: ev["Event Name"], product: ev["Product"], isCurrent: ev["Event Date"] === modal.eventDate && ev["Event Name"] === modal.eventName })), ev => ev.name + "|||" + ev.product);
       return { month: ym, sales: val || null, _sales: val, _events: evts.length ? evts : null };
@@ -455,10 +472,11 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
     data.forEach(d => { if (d._sales === 0) d.sales = null; });
     const markers = data.flatMap(d => (d._events || []).map(e => ({ ...e, month: d.month })));
     return { data, markers, partnerID: p.pid };
-  }, [modal, selIdx, salesIndex, events, analysisMode]);
+  }, [modal, selIdx, salesIndex, events, analysisMode, valueMode]);
 
   const mIY = formatEventImpact(modal.ratioYoY, modal.activations, yoyOk), mII = formatEventImpact(modal.ratioIMM, modal.activations, immOk);
   const mBY = formatBaseline(modal.baselineYoY, yoyOk), mBI = formatBaseline(modal.baselineIMM, immOk);
+  const pd = modal.partnerDetails || {};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
@@ -471,7 +489,6 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </div>
         <div className="overflow-auto flex-1">
-          {/* Chart area */}
           <div className="px-6 py-6 border-b border-gray-100 flex flex-col" style={{height:"403px"}}>
             {selIdx===null||!chartData?(<div className="flex flex-col items-center justify-center text-center flex-1"><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div><p className="text-sm text-gray-400">Select a partner below to view their sales timeline</p></div>):(
             <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -486,7 +503,6 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
               </LineChart></ResponsiveContainer></div>
             </div>)}
           </div>
-          {/* Partner table */}
           <div className="px-6 pt-4 pb-6">
             <div className="flex items-center mb-4"><div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-gray-400">Table Aggregate</span>
@@ -497,26 +513,32 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, onClose 
             <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50">
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Regs</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Attendees</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical IMM</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Forward Period</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactYoY")} style={{color:mSortCol==="impactYoY"?"#1d4ed8":"#6b7280"}}>Impact YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactIMM")} style={{color:mSortCol==="impactIMM"?"#1d4ed8":"#6b7280"}}>Impact IMM</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">BL Universe</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline IMM</th>
               <th className="px-4 py-3"></th>
             </tr></thead><tbody className="divide-y divide-gray-100">{(()=>{
               const indexed = modal.impactPartners.map((p,i)=>({...p,origIdx:i}));
               const sorted = mSortCol?[...indexed].sort((a,b)=>{const av=svP(mSortCol==="impactYoY"?a.ratioYoY:a.ratioIMM,a.activation),bv=svP(mSortCol==="impactYoY"?b.ratioYoY:b.ratioIMM,b.activation);return mSortDir==="desc"?bv-av:av-bv;}):indexed;
-              return sorted.map(p=>{const isSel=selIdx===p.origIdx;const pIY=formatPartnerImpact(p.ratioYoY,p.activation,yoyOk),pII=formatPartnerImpact(p.ratioIMM,p.activation,immOk);
+              return sorted.map(p=>{const isSel=selIdx===p.origIdx;const pIY=formatPartnerImpact(p.ratioYoY,p.activation,yoyOk),pII=formatPartnerImpact(p.ratioIMM,p.activation,immOk);const det=pd[p.pid]||{regs:0,att:0};
                 return(<tr key={p.origIdx} className="transition hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.pid}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{pNameMap[p.pid] || ""}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{det.regs}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{det.att}</td>
                 <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
                 <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
                 <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pIY.color}>{pIY.text}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pII.color}>{pII.text}</td>
+                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{modal.baselineUniverse}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBY.color}>{mBY.text}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBI.color}>{mBI.text}</td>
                 <td className="px-4 py-3"><button onClick={()=>setSelIdx(isSel?null:p.origIdx)} disabled={!p.found} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition border "+(!p.found?"text-gray-300 bg-white border-gray-200 cursor-not-allowed":isSel?"text-blue-600 bg-white border-blue-400 hover:border-blue-500":"text-gray-400 bg-white border-gray-300 hover:border-blue-300")}>Chart</button></td>
@@ -564,6 +586,7 @@ function App() {
   const [flashKeys, setFlashKeys] = useState([]);
   const fileRef = useRef(null);
   const [analysisMode, setAnalysisMode] = useState("product");
+  const [valueMode, setValueMode] = useState("value");
   const [impactMode, setImpactMode] = useState("yoy");
   const [fwdMonths, setFwdMonths] = useState(1);
   const [fDates, setFDates] = useState([]); const [fProd,setFProd]=useState([]); const [fType,setFType]=useState([]);
@@ -578,23 +601,19 @@ function App() {
   const setMode = (m) => { setModeRaw(m); setTab("analytics"); };
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= MIN_DESKTOP);
 
-  /* ─── Desktop check ─── */
   useEffect(() => { const h = () => setIsDesktop(window.innerWidth >= MIN_DESKTOP); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
 
-  /* ─── Data Load (mode-aware) ─── */
   useEffect(() => { setDataLoaded(false); (async () => { try {
     if (mode === "test") { const td = await loadTestData(); setEvents(td.events); setSales(td.sales); }
     else { const eidx = await psGet("evt_idx") || []; const eC = await Promise.all(eidx.map(k => psGet("evt:" + k))); const e = eC.flat().filter(Boolean); const sidx = await psGet("sal_idx") || []; const sC = await Promise.all(sidx.map(k => psGet("sal:" + k))); const s = sC.flat().filter(Boolean); setEvents(e); setSales(s); }
   } catch { setEvents([]); setSales([]); } setDataLoaded(true); })(); }, [mode]);
 
-  /* ─── IDB Save: Events (chunked) ─── */
   useEffect(() => { if (!dataLoaded || !events.length || mode !== "live") return; const t = setTimeout(async () => {
     const bm = _.groupBy(events, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("evt_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("evt:" + k); }
     for (const k of ks) await psSet("evt:" + k, bm[k]); await psSet("evt_idx", ks);
   }, 300); return () => clearTimeout(t); }, [events, dataLoaded, mode]);
 
-  /* ─── IDB Save: Sales (chunked) ─── */
   useEffect(() => { if (!dataLoaded || !sales.length || mode !== "live") return; const t = setTimeout(async () => {
     const bm = _.groupBy(sales, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("sal_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("sal:" + k); }
@@ -603,38 +622,40 @@ function App() {
 
   useEffect(() => { if (uploadState?.status==="success"||uploadState?.status==="partial"||uploadState?.status==="error") { const handler = () => { setUploadState(null); setFlashKeys([]); }; const t = setTimeout(() => window.addEventListener("click", handler, { once: true }), 300); return () => { clearTimeout(t); window.removeEventListener("click", handler); }; } }, [uploadState]);
 
-  /* ─── Monthly Sales Index ─── */
   const salesIndex = useMemo(() => {
-    const byPM = new Map(), byPPM = new Map(), totalM = new Map(), totalPM = new Map();
+    const byPM = new Map(), byPPM = new Map(), custPM = new Map(), custPPM = new Map();
     const months = new Set(), partnerFirst = new Map();
+    const csPM = new Map(), csPPM = new Map();
     for (const s of sales) {
       const d = parseD(s["Sale Date"]); if (!d) continue;
       const ym = mkKey(d.getUTCFullYear(), d.getUTCMonth() + 1), v = parseFloat(s["Sale Value"]) || 0;
-      const pid = (s["Partner ID"] || "").trim(), prod = (s["Product"] || "").trim();
+      const pid = (s["Partner ID"] || "").trim(), prod = (s["Product"] || "").trim(), cust = (s["Customer Name"] || "").trim();
       months.add(ym);
       if (pid) {
         const pmk = pid + "|||" + ym; byPM.set(pmk, (byPM.get(pmk) || 0) + v);
         const ppk = pid + "|||" + prod + "|||" + ym; byPPM.set(ppk, (byPPM.get(ppk) || 0) + v);
-        totalM.set(ym, (totalM.get(ym) || 0) + v);
-        const tpk = prod + "|||" + ym; totalPM.set(tpk, (totalPM.get(tpk) || 0) + v);
+        if (cust) {
+          if (!csPM.has(pmk)) csPM.set(pmk, new Set()); csPM.get(pmk).add(cust);
+          if (!csPPM.has(ppk)) csPPM.set(ppk, new Set()); csPPM.get(ppk).add(cust);
+        }
         if (!partnerFirst.has(pid) || ym < partnerFirst.get(pid)) partnerFirst.set(pid, ym);
       }
     }
-    return { byPM, byPPM, totalM, totalPM, months, partnerFirst };
+    for (const [k, s] of csPM) custPM.set(k, s.size);
+    for (const [k, s] of csPPM) custPPM.set(k, s.size);
+    return { byPM, byPPM, custPM, custPPM, months, partnerFirst };
   }, [sales]);
 
-  /* ─── Coverage + Report Counts ─── */
   const { coverageData, reportCounts } = useMemo(() => {
     const build = (data, col) => { const by = {}; (data||[]).forEach(r => { const d=parseD(r[col]); if(!d) return; const y=""+d.getUTCFullYear(), m=d.getUTCMonth()+1; if(!by[y]) by[y]=[]; if(!by[y].includes(m)) by[y].push(m); }); Object.keys(by).forEach(y => by[y].sort((a,b)=>a-b)); return by; };
     const evt = build(events,"Event Date"), sal = build(sales,"Sale Date");
     return { coverageData: { evt, sal }, reportCounts: { evt: Object.values(evt).reduce((s,ms)=>s+ms.length,0), sal: Object.values(sal).reduce((s,ms)=>s+ms.length,0) } };
   }, [events, sales]);
 
-  /* ─── Upload Handler ─── */
   const handleUpload = useCallback(async (files) => {
     if (!files||!files.length) return; const list = Array.from(files), total = list.length;
     const evtB = [], salB = []; let fail = 0; const fk = [];
-    for (let i = 0; i < list.length; i++) { setUploadState({status:"uploading",progress:Math.round((i/total)*100),current:i+1,total}); try { await new Promise(r=>setTimeout(r,50)); const rows = await parseCsv(list[i]); const type = detectType(rows); if (!type) { fail++; continue; } const dateCol = type==="event"?"Event Date":"Sale Date"; const fd = parseD(rows[0]?.[dateCol]); if (!fd) { fail++; continue; } const mo = ""+(fd.getUTCMonth()+1), yr = ""+fd.getUTCFullYear(); if (rows.some(r => { const d=parseD(r[dateCol]); return !d||""+(d.getUTCMonth()+1)!==mo||""+d.getUTCFullYear()!==yr; })) { fail++; continue; } const tagged = rows.map(r => ({...r, _uMonth:mo, _uYear:yr})); if (type==="event") { evtB.push({rows:tagged,mo,yr}); fk.push("evt-"+yr+"-"+mo); } else { salB.push({rows:tagged,mo,yr}); fk.push("sal-"+yr+"-"+mo); } } catch { fail++; } }
+    for (let i = 0; i < list.length; i++) { setUploadState({status:"uploading",progress:Math.round((i/total)*100),current:i+1,total}); try { await new Promise(r=>setTimeout(r,50)); const rows = await parseCsv(list[i]); const type = detectType(rows); if (!type) { fail++; continue; } if (!validateRows(rows, type)) { fail++; continue; } const dateCol = type==="event"?"Event Date":"Sale Date"; const fd = parseD(rows[0]?.[dateCol]); if (!fd) { fail++; continue; } const mo = ""+(fd.getUTCMonth()+1), yr = ""+fd.getUTCFullYear(); if (rows.some(r => { const d=parseD(r[dateCol]); return !d||""+(d.getUTCMonth()+1)!==mo||""+d.getUTCFullYear()!==yr; })) { fail++; continue; } const tagged = rows.map(r => ({...r, _uMonth:mo, _uYear:yr})); if (type==="event") { evtB.push({rows:tagged,mo,yr}); fk.push("evt-"+yr+"-"+mo); } else { salB.push({rows:tagged,mo,yr}); fk.push("sal-"+yr+"-"+mo); } } catch { fail++; } }
     setUploadState({status:"uploading",progress:100}); await new Promise(r=>setTimeout(r,200));
     let eS=0,sS=0,eU=0,sU=0; const seenE = new Set(), seenS = new Set();
     for (const b of evtB) { const k=b.yr+"-"+b.mo; if(events.some(r=>r._uMonth===b.mo&&r._uYear===b.yr)||seenE.has(k)) eU++; else eS++; seenE.add(k); }
@@ -646,20 +667,18 @@ function App() {
     const parts = []; if(eS>0&&eU>0) parts.push("Event data added and updated"); else if(eS>0) parts.push("Event data added"); else if(eU>0) parts.push("Event data updated"); if(sS>0&&sU>0) parts.push("Sales data added and updated"); else if(sS>0) parts.push("Sales data added"); else if(sU>0) parts.push("Sales data updated"); if(fail>0) { parts.push(fail+" file"+(fail>1?"s":"")+" failed"); setUploadState({status:"partial",message:parts.join(" · ")}); } else { setUploadState({status:"success",message:parts.join(" · ")}); }
   }, [events, sales]);
 
-  /* ─── Impact Cache ─── */
   const allEventsGrouped = useMemo(() => groupEvents(events), [events]);
 
   const impactCache = useMemo(() => {
     const cache = new Map();
     for (const g of allEventsGrouped) {
-      const imp = calcEventImpact(g, salesIndex, analysisMode, fwdMonths);
-      const bl = imp.eventStatus === "ok" ? calcBaselines(g, salesIndex, analysisMode, fwdMonths) : { yoy: null, imm: null };
+      const imp = calcEventImpact(g, salesIndex, analysisMode, fwdMonths, valueMode);
+      const bl = imp.eventStatus === "ok" ? calcBaselines(g, salesIndex, analysisMode, fwdMonths, valueMode) : { yoy: null, imm: null };
       cache.set(g.key, { ...g, ...imp, baselineYoY: bl.yoy, baselineIMM: bl.imm });
     }
     return cache;
-  }, [allEventsGrouped, salesIndex, analysisMode, fwdMonths]);
+  }, [allEventsGrouped, salesIndex, analysisMode, fwdMonths, valueMode]);
 
-  /* ─── Filtered Groups ─── */
   const allGrouped = useMemo(() => {
     let groups = [...impactCache.values()];
     if (fDates.length) { const s = new Set(fDates); groups = groups.filter(g => s.has(g.eventDate)); }
@@ -671,7 +690,6 @@ function App() {
     return groups;
   }, [impactCache, fDates, fProd, fType, fVenue, fCountry, fProvider]);
 
-  /* ─── Filter Options (derived from base groups — independent of impact toggles) ─── */
   const fo = useMemo(() => {
     const allGroups = allEventsGrouped;
     const dateSet = fDates.length ? new Set(fDates) : null, prodSet = fProd.length ? new Set(fProd) : null;
@@ -682,10 +700,7 @@ function App() {
       const pDate = !dateSet || dateSet.has(g.eventDate), pProd = !prodSet || prodSet.has(g.product);
       const pType = !typeSet || typeSet.has(g.eventType), pVenue = !venueSet || venueSet.has(g.venue);
       const pCountry = !countrySet || countrySet.has(g.country), pProvider = !providerSet || providerSet.has(g.provider);
-      if (pProd && pType && pVenue && pCountry && pProvider) {
-        const d = parseD(g.eventDate);
-        if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); }
-      }
+      if (pProd && pType && pVenue && pCountry && pProvider) { const d = parseD(g.eventDate); if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); } }
       if (pDate && pType && pVenue && pCountry && pProvider && g.product) prods.add(g.product);
       if (pDate && pProd && pVenue && pCountry && pProvider && g.eventType) types.add(g.eventType);
       if (pDate && pProd && pType && pCountry && pProvider && g.venue) venues.add(g.venue);
@@ -702,29 +717,39 @@ function App() {
     const nameQ = debouncedName.trim().toLowerCase();
     const nameFiltered = nameQ ? allGrouped.filter(g => g.eventName.toLowerCase().includes(nameQ)) : allGrouped;
     if (!sortCol) return nameFiltered;
-    return [...nameFiltered].sort((a,b) => { let av, bv; if (sortCol==="partners") { av=a.totalPartners; bv=b.totalPartners; } else if (sortCol==="attendees") { av=a.totalAttendees; bv=b.totalAttendees; } else if (sortCol==="ratioYoY") { av=svE(a.ratioYoY,a.activations); bv=svE(b.ratioYoY,b.activations); } else if (sortCol==="ratioIMM") { av=svE(a.ratioIMM,a.activations); bv=svE(b.ratioIMM,b.activations); } else if (sortCol==="blYoY") { av=svE(a.baselineYoY,0); bv=svE(b.baselineYoY,0); } else if (sortCol==="blIMM") { av=svE(a.baselineIMM,0); bv=svE(b.baselineIMM,0); } else if (sortCol==="date") { av=new Date(a.eventDate).getTime()||0; bv=new Date(b.eventDate).getTime()||0; } return sortDir==="desc"?bv-av:av-bv; });
+    return [...nameFiltered].sort((a,b) => { let av, bv;
+      if (sortCol==="registrations") { av=a.totalRegistrations; bv=b.totalRegistrations; }
+      else if (sortCol==="partners") { av=a.totalPartners; bv=b.totalPartners; }
+      else if (sortCol==="attendees") { av=a.totalAttendees; bv=b.totalAttendees; }
+      else if (sortCol==="ratioYoY") { av=svE(a.ratioYoY,a.activations); bv=svE(b.ratioYoY,b.activations); }
+      else if (sortCol==="ratioIMM") { av=svE(a.ratioIMM,a.activations); bv=svE(b.ratioIMM,b.activations); }
+      else if (sortCol==="blUniverse") { av=a.baselineUniverse; bv=b.baselineUniverse; }
+      else if (sortCol==="blYoY") { av=svE(a.baselineYoY,0); bv=svE(b.baselineYoY,0); }
+      else if (sortCol==="blIMM") { av=svE(a.baselineIMM,0); bv=svE(b.baselineIMM,0); }
+      else if (sortCol==="date") { av=new Date(a.eventDate).getTime()||0; bv=new Date(b.eventDate).getTime()||0; }
+      return sortDir==="desc"?bv-av:av-bv; });
   }, [allGrouped, sortCol, sortDir, debouncedName]);
 
   const tableAgg = useMemo(() => { if (!sales.length || !allGrouped.length) return null; const ok = allGrouped.filter(g => g.eventStatus === "ok"); if (!ok.length) return null; const hY = _.sumBy(ok, "histYoY"), fY = _.sumBy(ok, "fwdYoY"), hI = _.sumBy(ok, "histIMM"), fI = _.sumBy(ok, "fwdIMM"); return { yoy: formatRatio(hY > 0 ? fY / hY : null), imm: formatRatio(hI > 0 ? fI / hI : null) }; }, [allGrouped, sales]);
 
   const summaryData = useMemo(() => {
     if (!allGrouped.length || !sales.length) return null;
-    const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), totalAttendees: _.sumBy(evts, "totalAttendees") }; }); };
+    const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), totalAttendees: _.sumBy(evts, "totalAttendees"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
     const veYoY = allGrouped.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)), veIMM = allGrouped.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM));
-    return { topEventYoY: veYoY.length ? _.maxBy(veYoY, "ratioYoY") : null, topEventIMM: veIMM.length ? _.maxBy(veIMM, "ratioIMM") : null, topAct: (() => { const wA = allGrouped.filter(g => g.activations > 0); return wA.length ? _.maxBy(wA, "activations") : null; })(), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country") };
+    return { topEventYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate))[0] : null, topEventIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate))[0] : null, topAct: (() => { const wA = allGrouped.filter(g => g.activations > 0); return wA.length ? [...wA].sort(descTie(e => e.activations, e => e.eventDate))[0] : null; })(), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country") };
   }, [allGrouped, sales]);
 
   const topPartnersData = useMemo(() => {
     if (!allGrouped.length) return { impact: [], attendance: [] };
     const byP = {};
-    for (const g of allGrouped) { if (!g.impactPartners) continue; for (const p of g.impactPartners) { if (!p.pid) continue; if (!byP[p.pid]) byP[p.pid] = { pid: p.pid, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, events: 0 }; const b = byP[p.pid]; b.events++; b.histYoY += p.histYoY; b.fwdYoY += p.fwdYoY; b.histIMM += p.histIMM; b.fwdIMM += p.fwdIMM; } }
+    for (const g of allGrouped) { if (!g.impactPartners) continue; for (const p of g.impactPartners) { if (!p.pid) continue; if (!byP[p.pid]) byP[p.pid] = { pid: p.pid, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, events: 0, latestDate: "" }; const b = byP[p.pid]; b.events++; b.histYoY += p.histYoY; b.fwdYoY += p.fwdYoY; b.histIMM += p.histIMM; b.fwdIMM += p.fwdIMM; if (g.eventDate > b.latestDate) b.latestDate = g.eventDate; } }
     const all = Object.values(byP);
-    const impact = all.map(p => ({ pid: p.pid, ratio: impactMode==="yoy" ? (p.histYoY>0 ? p.fwdYoY/p.histYoY : null) : (p.histIMM>0 ? p.fwdIMM/p.histIMM : null) })).filter(p => p.ratio!=null && isFinite(p.ratio)).sort((a,b) => b.ratio-a.ratio).slice(0,10);
-    const attendance = [...all].sort((a,b) => b.events-a.events).slice(0,10).map(p => ({ pid: p.pid, events: p.events }));
+    const impact = all.map(p => ({ pid: p.pid, ratio: impactMode==="yoy" ? (p.histYoY>0 ? p.fwdYoY/p.histYoY : null) : (p.histIMM>0 ? p.fwdIMM/p.histIMM : null), latestDate: p.latestDate })).filter(p => p.ratio!=null && isFinite(p.ratio)).sort(descTie(p => p.ratio, p => p.latestDate)).slice(0,10);
+const attendance = [...all].sort(descTie(p => p.events, p => p.latestDate)).slice(0,10).map(p => ({ pid: p.pid, events: p.events }));
     return { impact, attendance };
   }, [allGrouped, impactMode]);
 
-  const globalNameMap = useMemo(() => { const m = {}; for (const r of events) { if (r["Partner ID"]) m[r["Partner ID"]] = r["Partner Name"] || ""; } return m; }, [events]);
+  const globalNameMap = useMemo(() => { const m = {}, d = {}; for (const r of events) { const pid = r["Partner ID"], dt = r["Event Date"]; if (pid && (!d[pid] || dt > d[pid])) { m[pid] = r["Partner Name"] || ""; d[pid] = dt; } } return m; }, [events]);
 
   const clearAll = useCallback(async () => {
     setEvents([]); setSales([]); setModal(null); setUploadState(null); setFlashKeys([]);
@@ -738,16 +763,11 @@ function App() {
   const closeModal = () => setModal(null);
   const hasEvt = events.length > 0, hasSales = sales.length > 0;
 
-  /* ─── Desktop Gate ─── */
   if (!isDesktop) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{fontFamily:"'Inter',system-ui,sans-serif"}}><p className="text-sm text-gray-500">Accessible only on a desktop</p></div>);
+  if (!dataLoaded) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{fontFamily:"'Inter',system-ui,sans-serif"}}><Dots /></div>);
 
-  /* ─── Loading ─── */
-  if (!dataLoaded) return (<div className="min-h-screen bg-gray-50 flex items-center justify-center" style={{fontFamily:"'Inter',system-ui,sans-serif"}}><div className="text-center"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><p className="text-sm text-gray-500 mb-3">Loading data</p><Dots /></div></div>);
-
-  /* ─── Render ─── */
   return (
     <div className="min-h-screen bg-gray-50" style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
-      {/* Header */}
       <div className="bg-white border-b border-gray-200"><div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h1 className="text-lg font-bold text-gray-900 leading-tight tracking-tight">Cloud Beacon</h1><p className="text-xs text-gray-400">Event impact analyzer</p></div></div>
         <div className="flex items-center gap-3"><span className="flex items-center text-xs whitespace-nowrap"><span className="text-gray-500">Event CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.evt}</span><span className="text-gray-300 mx-3">·</span><span className="text-gray-500">Sales CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.sal}</span></span><div className="w-px h-5 bg-gray-200"/><button onClick={clearAll} disabled={mode==="test"} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(mode==="test"?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button><div className="flex bg-gray-100 rounded-lg p-0.5 h-[32px]"><button onClick={()=>setMode("test")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-red-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-emerald-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div></div>
@@ -760,6 +780,7 @@ function App() {
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
             <TabSwitch items={[["yoy","YOY"],["imm","IMM"]]} active={impactMode} onChange={setImpactMode} />
             <TabSwitch items={[["product","Product Sales"],["total","Total Sales"]]} active={analysisMode} onChange={setAnalysisMode} />
+            <TabSwitch items={[["value","Value"],["customers","Customer Count"]]} active={valueMode} onChange={setValueMode} />
           </div>}
         </div>
 
@@ -773,11 +794,11 @@ function App() {
           {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableAgg={tableAgg} fName={fName} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
-          {hasEvt&&<PartnerLookup salesIndex={salesIndex} />}
+          {hasEvt&&<PartnerLookup salesIndex={salesIndex} valueMode={valueMode} />}
         </div>)}
       </div>
 
-      {modal&&<PartnerModal modal={modal} salesIndex={salesIndex} sales={sales} events={events} analysisMode={analysisMode} onClose={closeModal}/>}
+      {modal&&<PartnerModal modal={modal} salesIndex={salesIndex} sales={sales} events={events} analysisMode={analysisMode} valueMode={valueMode} onClose={closeModal}/>}
     </div>
   );
 }

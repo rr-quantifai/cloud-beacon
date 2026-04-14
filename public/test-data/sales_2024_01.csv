@@ -1,18 +1,18 @@
-Sale Date,Sale Value,Product,Partner ID
-2024-01-05,1500,Cloud,P001
-2024-01-15,1200,Cloud,P001
-2024-01-25,1300,Cloud,P001
-2024-01-10,750,AI,P001
-2024-01-20,700,AI,P001
-2024-01-08,400,Security,P001
-2024-01-08,1200,Cloud,P002
-2024-01-18,1100,Cloud,P002
-2024-01-28,1200,Cloud,P002
-2024-01-15,300,Business Central,P002
-2024-01-12,600,AI,P004
-2024-01-22,550,AI,P004
-2024-01-07,950,Cloud,P005
-2024-01-17,1000,Cloud,P005
-2024-01-10,600,AI,P005
-2024-01-10,650,Cloud,P006
-2024-01-20,700,Cloud,P006
+Sale Date,Sale Value,Product,Partner ID,Customer Name
+2024-01-03,14000,Cloud,P004,Pinnacle Group
+2024-01-05,12000,Cloud,P002,Gulf Enterprises
+2024-01-06,5000,Cloud,P001,Datapro Systems
+2024-01-08,15000,Cloud,P001,Acme Corporation
+2024-01-10,7000,AI,P007,Quantum Analytics
+2024-01-12,6000,Security,P009,Cyber Edge LLC
+2024-01-14,9000,BizApps,P007,Quantum Analytics
+2024-01-15,11000,BizApps,P010,Horizon Partners
+2024-01-16,10000,Cloud,P001,Techville Limited
+2024-01-18,6000,Cloud,P002,Meridian Trading
+2024-01-20,8000,BizApps,P010,Summit Digital
+2024-01-22,8000,AI,P001,Neuralnet LLC
+2024-01-24,10000,Cloud,P002,Gulf Enterprises
+2024-01-25,9000,Cloud,P004,Pinnacle Group
+2024-01-27,8000,Cloud,P004,Pinnacle Group
+2024-01-28,13000,Security,P009,Shield Force LLC
+2024-01-30,7000,Modern Work,P010,Cloud Nine FZE LLC
