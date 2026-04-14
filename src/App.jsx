@@ -376,7 +376,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
       {SH("registrations","Registrations")}{SH("partners","Partners")}{SH("attendees","Attendees")}
       {TH("Historical YOY")}{TH("Historical IMM")}{TH("Forward Period")}
       {SH("ratioYoY","Impact YOY")}{SH("ratioIMM","Impact IMM")}
-      {SH("blUniverse","BL Universe")}{SH("blYoY","Baseline YOY")}{SH("blIMM","Baseline IMM")}
+      {SH("blUniverse","Baseline Universe")}{SH("blYoY","Baseline YOY")}{SH("blIMM","Baseline IMM")}
       <th className="px-4 py-3"></th>
     </tr></thead><tbody className="divide-y divide-gray-100">{pageData.map(g => {
       const yoyOk = g.fwdAvail && g.yoyAvail, immOk = g.fwdAvail && g.immAvail;
@@ -513,14 +513,14 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
             <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50">
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Regs</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Registrations</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Attendees</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Historical IMM</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Forward Period</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactYoY")} style={{color:mSortCol==="impactYoY"?"#1d4ed8":"#6b7280"}}>Impact YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-gray-700 transition" onClick={()=>toggleMSort("impactIMM")} style={{color:mSortCol==="impactIMM"?"#1d4ed8":"#6b7280"}}>Impact IMM</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">BL Universe</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline Universe</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline YOY</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Baseline IMM</th>
               <th className="px-4 py-3"></th>
