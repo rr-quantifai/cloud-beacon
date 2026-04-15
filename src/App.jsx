@@ -306,14 +306,10 @@ const SummaryCards = ({ summaryData, impactMode, topPartnersData, globalNameMap 
   const [topPartnersView, setTopPartnersView] = useState("impact");
   return (
     <div className="mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Impact</p>
           {(()=>{const ev=impactMode==="yoy"?summaryData.topEventYoY:summaryData.topEventIMM;const ratio=ev?.[impactMode==="yoy"?"ratioYoY":"ratioIMM"];if(!ev)return <p className="text-lg font-bold text-gray-400">—</p>;return(<><p className="text-sm font-bold text-gray-900 mb-0.5">{ev.eventName}</p><p className="text-xs text-gray-400 mb-1">{fmtDate(ev.eventDate)+" · "+ev.product}</p><p className={"text-lg font-bold "+rc(ratio)}>{n(ratio)+"x"}</p></>);})()}
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Activations</p>
-          {summaryData.topAct?(<><p className="text-sm font-bold text-gray-900 mb-0.5">{summaryData.topAct.eventName}</p><p className="text-xs text-gray-400 mb-1">{fmtDate(summaryData.topAct.eventDate)+" · "+summaryData.topAct.product}</p><p className="text-lg font-bold text-emerald-600">{summaryData.topAct.activations}</p></>):<p className="text-lg font-bold text-gray-400">—</p>}
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
           <div className="flex items-center gap-1.5 mb-2 flex-shrink-0">
@@ -393,12 +389,12 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
         <td className="px-4 py-3 font-semibold text-gray-900">{g.totalRegistrations}</td>
         <td className="px-4 py-3 font-semibold text-gray-900">{g.totalPartners}</td>
         <td className="px-4 py-3 font-semibold text-gray-900">{g.totalAttendees}</td>
-        <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(g.yoyRange)}</td>
-        <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(g.immRange, "←")}</td>
-        <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(g.fwdRange)}</td>
+        <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.yoyRange)}</td>
+        <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.immRange, "←")}</td>
+        <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.fwdRange)}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+iY.color}>{iY.text}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+iI.color}>{iI.text}</td>
-        <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{g.baselineUniverse}</td>
+        <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{g.baselineUniverse}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+bY.color}>{bY.text}</td>
         <td className={"px-4 py-3 font-bold whitespace-nowrap "+bI.color}>{bI.text}</td>
         <td className="px-4 py-3"><button onClick={()=>openModal(g)} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">Partner Analysis</button></td>
@@ -531,14 +527,14 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
                 return(<tr key={p.origIdx} className="transition hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.pid}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{pNameMap[p.pid] || ""}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{det.regs}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{det.att}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{det.regs}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{det.att}</td>
+                <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
+                <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
+                <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pIY.color}>{pIY.text}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+pII.color}>{pII.text}</td>
-                <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">{modal.baselineUniverse}</td>
+                <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{modal.baselineUniverse}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBY.color}>{mBY.text}</td>
                 <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBI.color}>{mBI.text}</td>
                 <td className="px-4 py-3"><button onClick={()=>setSelIdx(isSel?null:p.origIdx)} disabled={!p.found} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition border "+(!p.found?"text-gray-300 bg-white border-gray-200 cursor-not-allowed":isSel?"text-blue-600 bg-white border-blue-400 hover:border-blue-500":"text-gray-400 bg-white border-gray-300 hover:border-blue-300")}>Chart</button></td>
@@ -736,7 +732,7 @@ function App() {
     if (!allGrouped.length || !sales.length) return null;
     const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), totalAttendees: _.sumBy(evts, "totalAttendees"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
     const veYoY = allGrouped.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)), veIMM = allGrouped.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM));
-    return { topEventYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate))[0] : null, topEventIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate))[0] : null, topAct: (() => { const wA = allGrouped.filter(g => g.activations > 0); return wA.length ? [...wA].sort(descTie(e => e.activations, e => e.eventDate))[0] : null; })(), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country") };
+    return { topEventYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate))[0] : null, topEventIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate))[0] : null, product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country") };
   }, [allGrouped, sales]);
 
   const topPartnersData = useMemo(() => {
