@@ -243,7 +243,7 @@ const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
   const vc = !hasData || data.length < 2 || (isImpact && top?.[rk] == null) ? "text-gray-400" : isImpact ? (top[rk] >= 1.5 ? "text-emerald-600" : top[rk] >= 1 ? "text-emerald-500" : top[rk] >= 0.8 ? "text-amber-500" : "text-red-500") : "text-blue-600";
   return (<div className="bg-white rounded-xl border border-gray-200 p-4 h-[156px] flex flex-col">
     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{title}</p>
-    {val==="—"?<p className="text-lg font-bold text-gray-400">—</p>:(<><p className="text-sm font-bold text-gray-900 mb-0.5">{top?.key}</p><p className={"text-lg font-bold mb-3 "+vc}>{val}</p><PillSwitch items={[["impact","Impact"],["turnout","Attendance"]]} active={metric} onChange={setMetric}/></>)}
+    {val==="—"?<p className="text-lg font-bold text-gray-400">—</p>:(<><p className="text-sm font-bold text-gray-900 mb-0.5">{top?.key}</p><p className={"text-lg font-bold mb-3 "+vc}>{val}</p><PillSwitch items={[["impact","Impact"],["attendance","Attendance"]]} active={metric} onChange={setMetric}/></>)}
   </div>);
 };
 
@@ -384,7 +384,7 @@ const EventTable = ({ sortedGrouped, tableAgg, fName, sortCol, sortDir, toggleSo
     </div></div>
     <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"2000px"}}><thead><tr className="bg-gray-50 text-left">
       {TH("Name")}{SH("date","Date")}{["Product","Type","Venue","Country","Provider"].map(h=><th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>)}
-      {SH("registrations","Registrations")}{SH("partners","Partners")}{SH("attendees","Attendees")}
+      {SH("registrations","Registrations")}{SH("attendance","Attendance")}{SH("attendees","Attendees")}
       {TH("Historical YOY")}{TH("Historical IMM")}{TH("Forward Period")}
       {SH("ratioYoY","Impact YOY")}{SH("ratioIMM","Impact IMM")}
       {SH("blUniverse","Baseline Universe")}{SH("blYoY","Baseline YOY")}{SH("blIMM","Baseline IMM")}
@@ -730,7 +730,7 @@ function App() {
     if (!sortCol) return nameFiltered;
     return [...nameFiltered].sort((a,b) => { let av, bv;
       if (sortCol==="registrations") { av=a.totalRegistrations; bv=b.totalRegistrations; }
-      else if (sortCol==="partners") { av=a.totalPartners; bv=b.totalPartners; }
+      else if (sortCol==="attendance") { av=a.totalPartners; bv=b.totalPartners; }
       else if (sortCol==="attendees") { av=a.totalAttendees; bv=b.totalAttendees; }
       else if (sortCol==="ratioYoY") { av=svE(a.ratioYoY,a.activations); bv=svE(b.ratioYoY,b.activations); }
       else if (sortCol==="ratioIMM") { av=svE(a.ratioIMM,a.activations); bv=svE(b.ratioIMM,b.activations); }
