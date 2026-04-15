@@ -237,13 +237,13 @@ const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !p
 const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
   const isImpact = metric === "impact", hasData = data && data.length > 0;
   const rk = impactMode === "imm" ? "avgRatioIMM" : "avgRatioYoY";
-  const sorted = hasData ? [...data].sort(descTie(x => isImpact ? (x[rk] || -1) : metric === "turnout" ? x.totalPartners : x.totalAttendees, x => x.latestDate)) : [];
+  const sorted = hasData ? [...data].sort(descTie(x => isImpact ? (x[rk] || -1) : x.totalPartners, x => x.latestDate)) : [];
   const top = sorted[0];
-  const val = !hasData || data.length < 2 ? "—" : isImpact ? (top?.[rk] != null && isFinite(top[rk]) ? top[rk].toFixed(2) + "x" : "—") : metric === "turnout" ? (top?.totalPartners||0) + " partners" : (top?.totalAttendees||0) + " attendees";
+  const val = !hasData || data.length < 2 ? "—" : isImpact ? (top?.[rk] != null && isFinite(top[rk]) ? top[rk].toFixed(2) + "x" : "—") : (top?.totalPartners||0) + " partners";
   const vc = !hasData || data.length < 2 || (isImpact && top?.[rk] == null) ? "text-gray-400" : isImpact ? (top[rk] >= 1.5 ? "text-emerald-600" : top[rk] >= 1 ? "text-emerald-500" : top[rk] >= 0.8 ? "text-amber-500" : "text-red-500") : "text-blue-600";
   return (<div className="bg-white rounded-xl border border-gray-200 p-4 h-[156px] flex flex-col">
     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{title}</p>
-    {val==="—"?<p className="text-lg font-bold text-gray-400">—</p>:(<><p className="text-sm font-bold text-gray-900 mb-0.5">{top?.key}</p><p className={"text-lg font-bold mb-3 "+vc}>{val}</p><PillSwitch items={[["impact","Impact"],["turnout","Turnout"],["attendees","Attendees"]]} active={metric} onChange={setMetric}/></>)}
+    {val==="—"?<p className="text-lg font-bold text-gray-400">—</p>:(<><p className="text-sm font-bold text-gray-900 mb-0.5">{top?.key}</p><p className={"text-lg font-bold mb-3 "+vc}>{val}</p><PillSwitch items={[["impact","Impact"],["turnout","Attendance"]]} active={metric} onChange={setMetric}/></>)}
   </div>);
 };
 
@@ -303,17 +303,31 @@ const SummaryCards = ({ summaryData, impactMode, topPartnersData, globalNameMap 
   const [typeMetric, setTypeMetric] = useState("impact");
   const [venueMetric, setVenueMetric] = useState("impact");
   const [countryMetric, setCountryMetric] = useState("impact");
+  const [providerMetric, setProviderMetric] = useState("impact");
+  const [topEventsView, setTopEventsView] = useState("impact");
   const [topPartnersView, setTopPartnersView] = useState("impact");
   return (
     <div className="mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Impact</p>
-          {(()=>{const ev=impactMode==="yoy"?summaryData.topEventYoY:summaryData.topEventIMM;const ratio=ev?.[impactMode==="yoy"?"ratioYoY":"ratioIMM"];if(!ev)return <p className="text-lg font-bold text-gray-400">—</p>;return(<><p className="text-sm font-bold text-gray-900 mb-0.5">{ev.eventName}</p><p className="text-xs text-gray-400 mb-1">{fmtDate(ev.eventDate)+" · "+ev.product}</p><p className={"text-lg font-bold "+rc(ratio)}>{n(ratio)+"x"}</p></>);})()}
+          <div className="flex items-center gap-1.5 mb-2 flex-shrink-0">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Leaderboard</p>
+            <span className="text-xs text-gray-300">·</span>
+            <button onClick={()=>setTopEventsView("impact")} className={"text-xs transition "+(topEventsView==="impact"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Impact</button>
+            <span className="text-xs text-gray-300">·</span>
+            <button onClick={()=>setTopEventsView("attendance")} className={"text-xs transition "+(topEventsView==="attendance"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Attendance</button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {(()=>{const list = topEventsView==="impact" ? (impactMode==="yoy"?summaryData.topEventsYoY:summaryData.topEventsIMM) : summaryData.topEventsByAtt;
+              if (!list.length) return <p className="text-lg font-bold text-gray-400">—</p>;
+              return <div className="flex flex-col divide-y divide-gray-100">{list.map(e => { const val = topEventsView==="impact" ? formatRatio(impactMode==="yoy"?e.ratioYoY:e.ratioIMM) : null;
+                return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(topEventsView==="impact"?val.color:"text-blue-600")}>{topEventsView==="impact"?val.text:e.totalPartners}</span></div>; })}</div>;
+            })()}
+          </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
           <div className="flex items-center gap-1.5 mb-2 flex-shrink-0">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Partners</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner Leaderboard</p>
             <span className="text-xs text-gray-300">·</span>
             <button onClick={()=>setTopPartnersView("impact")} className={"text-xs transition "+(topPartnersView==="impact"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Impact</button>
             <span className="text-xs text-gray-300">·</span>
@@ -328,11 +342,12 @@ const SummaryCards = ({ summaryData, impactMode, topPartnersData, globalNameMap 
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <DimCard title="Top Product" data={summaryData.product} metric={prodMetric} setMetric={setProdMetric} impactMode={impactMode}/>
         <DimCard title="Top Type" data={summaryData.eventType} metric={typeMetric} setMetric={setTypeMetric} impactMode={impactMode}/>
         <DimCard title="Top Venue" data={summaryData.venue} metric={venueMetric} setMetric={setVenueMetric} impactMode={impactMode}/>
         <DimCard title="Top Country" data={summaryData.country} metric={countryMetric} setMetric={setCountryMetric} impactMode={impactMode}/>
+        <DimCard title="Top Provider" data={summaryData.provider} metric={providerMetric} setMetric={setProviderMetric} impactMode={impactMode}/>
       </div>
     </div>
   );
@@ -730,9 +745,9 @@ function App() {
 
   const summaryData = useMemo(() => {
     if (!allGrouped.length || !sales.length) return null;
-    const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), totalAttendees: _.sumBy(evts, "totalAttendees"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
+    const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
     const veYoY = allGrouped.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)), veIMM = allGrouped.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM));
-    return { topEventYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate))[0] : null, topEventIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate))[0] : null, product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country") };
+    return { topEventsYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate)).slice(0,10) : [], topEventsIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate)).slice(0,10) : [], topEventsByAtt: [...allGrouped].sort(descTie(e => e.totalPartners, e => e.eventDate)).slice(0,10), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country"), provider: bd("provider") };
   }, [allGrouped, sales]);
 
   const topPartnersData = useMemo(() => {
