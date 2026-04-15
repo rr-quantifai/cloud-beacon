@@ -164,7 +164,6 @@ const HL = (text, q) => { if (!q) return text; const p = [], lo = text.toLowerCa
 const Dots = () => (<span className="inline-flex items-center gap-1">{[0,1,2].map(i=><span key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300" style={{animation:"dotPulse 1.2s infinite",animationDelay:i*0.2+"s"}}/>)}<style>{`@keyframes dotPulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style></span>);
 const Badge = ({ text, className }) => <span className={"inline-block px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap " + className}>{text}</span>;
 const TabSwitch = ({ items, active, onChange, disabledKeys }) => (<div className="flex gap-1 bg-gray-100 rounded-lg p-1">{items.map(([k, l]) => { const dis = disabledKeys?.includes(k); return <button key={k} onClick={() => !dis && onChange(k)} className={"px-4 py-2 text-sm font-medium rounded-md transition whitespace-nowrap " + (active === k ? "bg-white text-gray-900 shadow-sm" : dis ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>{l}</button>; })}</div>);
-const PillSwitch = ({ items, active, onChange }) => (<div className="flex bg-gray-100 rounded-lg p-0.5 w-full">{items.map(([k, l]) => (<button key={k} onClick={() => onChange(k)} className={"flex-1 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-center " + (active === k ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600")}>{l}</button>))}</div>);
 
 /* ═══════════════════════════════════════════════════════════════════
    FILTER COMPONENTS
@@ -234,19 +233,6 @@ const DateFilter = ({ tree, selected, onChange }) => {
    ═══════════════════════════════════════════════════════════════════ */
 const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !payload.length) return null; const evts = payload[0]?.payload?._events; return (<div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs"><p className="font-semibold text-gray-700 mb-1.5">{fmtYM(label)}</p>{evts && evts.map((ev, i) => (<div key={"ev"+i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROD_COLORS[ev.product] || "#6b7280" }} /><span className="text-gray-500">{ev.name}:</span><span className="font-medium text-gray-800 ml-auto">{ev.product}</span></div>))}{payload.filter(p => p.value != null && p.value !== 0).map((p, i) => (<div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-gray-500">{p.name}:</span><span className="font-medium text-gray-800 ml-auto">{Number(p.value).toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>))}</div>); };
 
-const DimCard = ({ title, data, metric, setMetric, impactMode }) => {
-  const isImpact = metric === "impact", hasData = data && data.length > 0;
-  const rk = impactMode === "imm" ? "avgRatioIMM" : "avgRatioYoY";
-  const sorted = hasData ? [...data].sort(descTie(x => isImpact ? (x[rk] || -1) : x.totalPartners, x => x.latestDate)) : [];
-  const top = sorted[0];
-  const val = !hasData || data.length < 2 ? "—" : isImpact ? (top?.[rk] != null && isFinite(top[rk]) ? top[rk].toFixed(2) + "x" : "—") : (top?.totalPartners||0) + " partners";
-  const vc = !hasData || data.length < 2 || (isImpact && top?.[rk] == null) ? "text-gray-400" : isImpact ? (top[rk] >= 1.5 ? "text-emerald-600" : top[rk] >= 1 ? "text-emerald-500" : top[rk] >= 0.8 ? "text-amber-500" : "text-red-500") : "text-blue-600";
-  return (<div className="bg-white rounded-xl border border-gray-200 p-4 h-[156px] flex flex-col">
-    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{title}</p>
-    {val==="—"?<p className="text-lg font-bold text-gray-400">—</p>:(<><p className="text-sm font-bold text-gray-900 mb-0.5">{top?.key}</p><p className={"text-lg font-bold mb-3 "+vc}>{val}</p><PillSwitch items={[["impact","Impact"],["attendance","Attendance"]]} active={metric} onChange={setMetric}/></>)}
-  </div>);
-};
-
 const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
   const st = uploadState?.status;
   const bc = st==="error"?"border-red-200":st==="partial"?"border-amber-200":st==="success"?"border-emerald-200":"border-blue-300";
@@ -298,56 +284,39 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
   </div>
 );
 
-const SummaryCards = ({ summaryData, impactMode, topPartnersData, globalNameMap }) => {
-  const [prodMetric, setProdMetric] = useState("impact");
-  const [typeMetric, setTypeMetric] = useState("impact");
-  const [venueMetric, setVenueMetric] = useState("impact");
-  const [countryMetric, setCountryMetric] = useState("impact");
-  const [providerMetric, setProviderMetric] = useState("impact");
-  const [topEventsView, setTopEventsView] = useState("impact");
-  const [topPartnersView, setTopPartnersView] = useState("impact");
+const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
+  const [lb1Page, setLb1Page] = useState(0);
+  const [lb1View, setLb1View] = useState("yoy");
+  const [lb2Page, setLb2Page] = useState(0);
+  const [lb2View, setLb2View] = useState("yoy");
+  const lb1Titles = ["Event Leaderboard", "Partner Leaderboard"];
+  const lb2Titles = ["Product Leaderboard", "Venue Leaderboard", "Country Leaderboard"];
+  const lb2Data = [summaryData.product, summaryData.venue, summaryData.country];
+  const isImp = (v) => v === "yoy" || v === "imm";
+  const ViewSw = ({ view, setView }) => (<>{["yoy","imm","attendance"].map(v => (<span key={v} className="flex items-center gap-1.5"><span className="text-xs text-gray-300">·</span><button onClick={()=>setView(v)} className={"text-xs transition "+(view===v?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>{v==="yoy"?"By Impact YOY":v==="imm"?"By Impact IMM":"By Attendance"}</button></span>))}</>);
+  const DotNav = ({ count, active, onChange }) => (<div className="flex items-center gap-1.5">{Array.from({length:count},(_,i)=>(<button key={i} onClick={()=>onChange(i)} className={"w-1.5 h-1.5 rounded-full transition "+(active===i?"bg-gray-700":"bg-gray-300 hover:bg-gray-400")}/>))}</div>);
+  const lb1List = lb1Page===0 ? (lb1View==="yoy"?summaryData.topEventsYoY:lb1View==="imm"?summaryData.topEventsIMM:summaryData.topEventsByAtt) : (lb1View==="yoy"?topPartnersData.impactYoY:lb1View==="imm"?topPartnersData.impactIMM:topPartnersData.attendance);
+  const lb2Raw = lb2Data[lb2Page] || [];
+  const lb2List = !lb2Raw.length ? [] : lb2View==="yoy" ? [...lb2Raw].filter(x=>x.avgRatioYoY!=null&&isFinite(x.avgRatioYoY)).sort(descTie(x=>x.avgRatioYoY,x=>x.latestDate)).slice(0,10) : lb2View==="imm" ? [...lb2Raw].filter(x=>x.avgRatioIMM!=null&&isFinite(x.avgRatioIMM)).sort(descTie(x=>x.avgRatioIMM,x=>x.latestDate)).slice(0,10) : [...lb2Raw].sort(descTie(x=>x.totalPartners,x=>x.latestDate)).slice(0,10);
   return (
-    <div className="mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
-          <div className="flex items-center gap-1.5 mb-2 flex-shrink-0">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Leaderboard</p>
-            <span className="text-xs text-gray-300">·</span>
-            <button onClick={()=>setTopEventsView("impact")} className={"text-xs transition "+(topEventsView==="impact"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Impact</button>
-            <span className="text-xs text-gray-300">·</span>
-            <button onClick={()=>setTopEventsView("attendance")} className={"text-xs transition "+(topEventsView==="attendance"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Attendance</button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {(()=>{const list = topEventsView==="impact" ? (impactMode==="yoy"?summaryData.topEventsYoY:summaryData.topEventsIMM) : summaryData.topEventsByAtt;
-              if (!list.length) return <p className="text-lg font-bold text-gray-400">—</p>;
-              return <div className="flex flex-col divide-y divide-gray-100">{list.map(e => { const val = topEventsView==="impact" ? formatRatio(impactMode==="yoy"?e.ratioYoY:e.ratioIMM) : null;
-                return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(topEventsView==="impact"?val.color:"text-blue-600")}>{topEventsView==="impact"?val.text:e.totalPartners}</span></div>; })}</div>;
-            })()}
-          </div>
+    <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{lb1Titles[lb1Page]}</p><ViewSw view={lb1View} setView={setLb1View}/></div>
+          <DotNav count={2} active={lb1Page} onChange={setLb1Page}/>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
-          <div className="flex items-center gap-1.5 mb-2 flex-shrink-0">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner Leaderboard</p>
-            <span className="text-xs text-gray-300">·</span>
-            <button onClick={()=>setTopPartnersView("impact")} className={"text-xs transition "+(topPartnersView==="impact"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Impact</button>
-            <span className="text-xs text-gray-300">·</span>
-            <button onClick={()=>setTopPartnersView("attendance")} className={"text-xs transition "+(topPartnersView==="attendance"?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>By Attendance</button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {(()=>{const list = topPartnersView==="impact" ? topPartnersData.impact : topPartnersData.attendance;
-              if (!list.length) return <p className="text-lg font-bold text-gray-400">—</p>;
-              return <div className="flex flex-col divide-y divide-gray-100">{list.map(p => { const name = globalNameMap[p.pid]; const val = topPartnersView==="impact" ? formatRatio(p.ratio) : null;
-                return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(topPartnersView==="impact"?val.color:"text-blue-600")}>{topPartnersView==="impact"?val.text:p.events}</span></div>; })}</div>;
-            })()}
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          {!lb1List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb1Page===0?lb1List.map(e=>{const val=isImp(lb1View)?formatRatio(lb1View==="yoy"?e.ratioYoY:e.ratioIMM):null;return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:e.totalPartners}</span></div>;}):lb1List.map(p=>{const name=globalNameMap[p.pid];const val=isImp(lb1View)?formatRatio(p.ratio):null;return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:p.events}</span></div>;})}</div>)}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <DimCard title="Top Product" data={summaryData.product} metric={prodMetric} setMetric={setProdMetric} impactMode={impactMode}/>
-        <DimCard title="Top Type" data={summaryData.eventType} metric={typeMetric} setMetric={setTypeMetric} impactMode={impactMode}/>
-        <DimCard title="Top Venue" data={summaryData.venue} metric={venueMetric} setMetric={setVenueMetric} impactMode={impactMode}/>
-        <DimCard title="Top Country" data={summaryData.country} metric={countryMetric} setMetric={setCountryMetric} impactMode={impactMode}/>
-        <DimCard title="Top Provider" data={summaryData.provider} metric={providerMetric} setMetric={setProviderMetric} impactMode={impactMode}/>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{lb2Titles[lb2Page]}</p><ViewSw view={lb2View} setView={setLb2View}/></div>
+          <DotNav count={3} active={lb2Page} onChange={setLb2Page}/>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {!lb2List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb2List.map(d=>{const val=isImp(lb2View)?formatRatio(lb2View==="yoy"?d.avgRatioYoY:d.avgRatioIMM):null;return <div key={d.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 font-medium">{d.key}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb2View)?val.color:"text-blue-600")}>{isImp(lb2View)?val.text:d.totalPartners}</span></div>;})}</div>)}
+        </div>
       </div>
     </div>
   );
@@ -598,7 +567,6 @@ function App() {
   const fileRef = useRef(null);
   const [analysisMode, setAnalysisMode] = useState("product");
   const [valueMode, setValueMode] = useState("value");
-  const [impactMode, setImpactMode] = useState("yoy");
   const [fwdMonths, setFwdMonths] = useState(1);
   const [fDates, setFDates] = useState([]); const [fProd,setFProd]=useState([]); const [fType,setFType]=useState([]);
   const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]);
@@ -747,18 +715,19 @@ function App() {
     if (!allGrouped.length || !sales.length) return null;
     const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
     const veYoY = allGrouped.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)), veIMM = allGrouped.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM));
-    return { topEventsYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate)).slice(0,10) : [], topEventsIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate)).slice(0,10) : [], topEventsByAtt: [...allGrouped].sort(descTie(e => e.totalPartners, e => e.eventDate)).slice(0,10), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country"), provider: bd("provider") };
+    return { topEventsYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate)).slice(0,10) : [], topEventsIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate)).slice(0,10) : [], topEventsByAtt: [...allGrouped].sort(descTie(e => e.totalPartners, e => e.eventDate)).slice(0,10), product: bd("product"), venue: bd("venue"), country: bd("country") };
   }, [allGrouped, sales]);
 
   const topPartnersData = useMemo(() => {
-    if (!allGrouped.length) return { impact: [], attendance: [] };
+    if (!allGrouped.length) return { impactYoY: [], impactIMM: [], attendance: [] };
     const byP = {};
     for (const g of allGrouped) { if (!g.impactPartners) continue; for (const p of g.impactPartners) { if (!p.pid) continue; if (!byP[p.pid]) byP[p.pid] = { pid: p.pid, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, events: 0, latestDate: "" }; const b = byP[p.pid]; b.events++; b.histYoY += p.histYoY; b.fwdYoY += p.fwdYoY; b.histIMM += p.histIMM; b.fwdIMM += p.fwdIMM; if (g.eventDate > b.latestDate) b.latestDate = g.eventDate; } }
     const all = Object.values(byP);
-    const impact = all.map(p => ({ pid: p.pid, ratio: impactMode==="yoy" ? (p.histYoY>0 ? p.fwdYoY/p.histYoY : null) : (p.histIMM>0 ? p.fwdIMM/p.histIMM : null), latestDate: p.latestDate })).filter(p => p.ratio!=null && isFinite(p.ratio)).sort(descTie(p => p.ratio, p => p.latestDate)).slice(0,10);
-const attendance = [...all].sort(descTie(p => p.events, p => p.latestDate)).slice(0,10).map(p => ({ pid: p.pid, events: p.events }));
-    return { impact, attendance };
-  }, [allGrouped, impactMode]);
+    const impactYoY = all.map(p => ({ pid: p.pid, ratio: p.histYoY>0 ? p.fwdYoY/p.histYoY : null, latestDate: p.latestDate })).filter(p => p.ratio!=null && isFinite(p.ratio)).sort(descTie(p => p.ratio, p => p.latestDate)).slice(0,10);
+    const impactIMM = all.map(p => ({ pid: p.pid, ratio: p.histIMM>0 ? p.fwdIMM/p.histIMM : null, latestDate: p.latestDate })).filter(p => p.ratio!=null && isFinite(p.ratio)).sort(descTie(p => p.ratio, p => p.latestDate)).slice(0,10);
+    const attendance = [...all].sort(descTie(p => p.events, p => p.latestDate)).slice(0,10).map(p => ({ pid: p.pid, events: p.events }));
+    return { impactYoY, impactIMM, attendance };
+  }, [allGrouped]);
 
   const globalNameMap = useMemo(() => { const m = {}, d = {}; for (const r of events) { const pid = r["Partner ID"], dt = r["Event Date"]; if (pid && (!d[pid] || dt > d[pid])) { m[pid] = r["Partner Name"] || ""; d[pid] = dt; } } return m; }, [events]);
 
@@ -789,7 +758,6 @@ const attendance = [...all].sort(descTie(p => p.events, p => p.latestDate)).slic
           <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} disabledKeys={mode==="test"?["upload"]:undefined} />
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
-            <TabSwitch items={[["yoy","YOY"],["imm","IMM"]]} active={impactMode} onChange={setImpactMode} />
             <TabSwitch items={[["product","Product Sales"],["total","Total Sales"]]} active={analysisMode} onChange={setAnalysisMode} />
             <TabSwitch items={[["value","Value"],["customers","Customer Count"]]} active={valueMode} onChange={setValueMode} />
           </div>}
@@ -801,7 +769,7 @@ const attendance = [...all].sort(descTie(p => p.events, p => p.latestDate)).slic
         </div>)}
 
         {tab==="analytics"&&(<div>
-          {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} impactMode={impactMode} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
+          {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
           {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableAgg={tableAgg} fName={fName} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
