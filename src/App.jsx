@@ -290,14 +290,14 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
   const [lb2Page, setLb2Page] = useState(0);
   const [lb2View, setLb2View] = useState("yoy");
   const lb1Titles = ["Event Leaderboard", "Partner Leaderboard"];
-  const lb2Titles = ["Product Leaderboard", "Venue Leaderboard", "Country Leaderboard"];
-  const lb2Data = [summaryData.product, summaryData.venue, summaryData.country];
+  const lb2Titles = ["Product Comparison", "Type Comparison", "Venue Comparison", "Country Comparison", "Provider Comparison"];
+  const lb2Data = [summaryData.product, summaryData.eventType, summaryData.venue, summaryData.country, summaryData.provider];
   const isImp = (v) => v === "yoy" || v === "imm";
-  const ViewSw = ({ view, setView }) => (<>{["yoy","imm","attendance"].map(v => (<span key={v} className="flex items-center gap-1.5"><span className="text-xs text-gray-300">·</span><button onClick={()=>setView(v)} className={"text-xs transition "+(view===v?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>{v==="yoy"?"By Impact YOY":v==="imm"?"By Impact IMM":"By Attendance"}</button></span>))}</>);
+  const ViewSw = ({ view, setView }) => (<>{["yoy","imm","attendance"].map(v => (<span key={v} className="flex items-center gap-1.5"><span className="text-xs text-gray-300">·</span><button onClick={()=>setView(v)} className={"text-xs uppercase transition "+(view===v?"font-semibold text-gray-700":"text-gray-400 hover:text-gray-600")}>{v==="yoy"?"Impact YOY":v==="imm"?"Impact IMM":"Attendance"}</button></span>))}</>);
   const DotNav = ({ count, active, onChange }) => (<div className="flex items-center gap-1.5">{Array.from({length:count},(_,i)=>(<button key={i} onClick={()=>onChange(i)} className={"w-1.5 h-1.5 rounded-full transition "+(active===i?"bg-gray-700":"bg-gray-300 hover:bg-gray-400")}/>))}</div>);
   const lb1List = lb1Page===0 ? (lb1View==="yoy"?summaryData.topEventsYoY:lb1View==="imm"?summaryData.topEventsIMM:summaryData.topEventsByAtt) : (lb1View==="yoy"?topPartnersData.impactYoY:lb1View==="imm"?topPartnersData.impactIMM:topPartnersData.attendance);
   const lb2Raw = lb2Data[lb2Page] || [];
-  const lb2List = !lb2Raw.length ? [] : lb2View==="yoy" ? [...lb2Raw].filter(x=>x.avgRatioYoY!=null&&isFinite(x.avgRatioYoY)).sort(descTie(x=>x.avgRatioYoY,x=>x.latestDate)).slice(0,10) : lb2View==="imm" ? [...lb2Raw].filter(x=>x.avgRatioIMM!=null&&isFinite(x.avgRatioIMM)).sort(descTie(x=>x.avgRatioIMM,x=>x.latestDate)).slice(0,10) : [...lb2Raw].sort(descTie(x=>x.totalPartners,x=>x.latestDate)).slice(0,10);
+  const lb2List = !lb2Raw.length ? [] : lb2View==="yoy" ? [...lb2Raw].filter(x=>x.avgRatioYoY!=null&&isFinite(x.avgRatioYoY)).sort(descTie(x=>x.avgRatioYoY,x=>x.latestDate)) : lb2View==="imm" ? [...lb2Raw].filter(x=>x.avgRatioIMM!=null&&isFinite(x.avgRatioIMM)).sort(descTie(x=>x.avgRatioIMM,x=>x.latestDate)) : [...lb2Raw].sort(descTie(x=>x.totalPartners,x=>x.latestDate));
   return (
     <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
@@ -312,7 +312,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
       <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
         <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <div className="flex items-center gap-1.5"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{lb2Titles[lb2Page]}</p><ViewSw view={lb2View} setView={setLb2View}/></div>
-          <DotNav count={3} active={lb2Page} onChange={setLb2Page}/>
+          <DotNav count={5} active={lb2Page} onChange={setLb2Page}/>
         </div>
         <div className="flex-1 overflow-y-auto">
           {!lb2List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb2List.map(d=>{const val=isImp(lb2View)?formatRatio(lb2View==="yoy"?d.avgRatioYoY:d.avgRatioIMM):null;return <div key={d.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 font-medium">{d.key}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb2View)?val.color:"text-blue-600")}>{isImp(lb2View)?val.text:d.totalPartners}</span></div>;})}</div>)}
@@ -511,8 +511,8 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
                 return(<tr key={p.origIdx} className="transition hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.pid}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{pNameMap[p.pid] || ""}</td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{det.regs}</td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{det.att}</td>
+                <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{det.regs}</td>
+                <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{det.att}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
@@ -715,7 +715,7 @@ function App() {
     if (!allGrouped.length || !sales.length) return null;
     const bd = k => { const g = _.groupBy(allGrouped, k); return Object.entries(g).map(([key, evts]) => { const vY = evts.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)); const vI = evts.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM)); return { key, avgRatioYoY: vY.length ? _.meanBy(vY, "ratioYoY") : null, avgRatioIMM: vI.length ? _.meanBy(vI, "ratioIMM") : null, totalPartners: _.sumBy(evts, "totalPartners"), latestDate: _.maxBy(evts, "eventDate")?.eventDate || "" }; }); };
     const veYoY = allGrouped.filter(e => e.ratioYoY != null && isFinite(e.ratioYoY)), veIMM = allGrouped.filter(e => e.ratioIMM != null && isFinite(e.ratioIMM));
-    return { topEventsYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate)).slice(0,10) : [], topEventsIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate)).slice(0,10) : [], topEventsByAtt: [...allGrouped].sort(descTie(e => e.totalPartners, e => e.eventDate)).slice(0,10), product: bd("product"), venue: bd("venue"), country: bd("country") };
+    return { topEventsYoY: veYoY.length ? [...veYoY].sort(descTie(e => e.ratioYoY, e => e.eventDate)).slice(0,10) : [], topEventsIMM: veIMM.length ? [...veIMM].sort(descTie(e => e.ratioIMM, e => e.eventDate)).slice(0,10) : [], topEventsByAtt: [...allGrouped].sort(descTie(e => e.totalPartners, e => e.eventDate)).slice(0,10), product: bd("product"), eventType: bd("eventType"), venue: bd("venue"), country: bd("country"), provider: bd("provider") };
   }, [allGrouped, sales]);
 
   const topPartnersData = useMemo(() => {
@@ -759,7 +759,7 @@ function App() {
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
             <TabSwitch items={[["product","Product Sales"],["total","Total Sales"]]} active={analysisMode} onChange={setAnalysisMode} />
-            <TabSwitch items={[["value","Value"],["customers","Customer Count"]]} active={valueMode} onChange={setValueMode} />
+            <TabSwitch items={[["value","Value"],["customers","Customers"]]} active={valueMode} onChange={setValueMode} />
           </div>}
         </div>
 
