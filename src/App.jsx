@@ -87,7 +87,7 @@ const groupEvents = (evts) => {
 /* ═══════════════════════════════════════════════════════════════════
    CALCULATION ENGINE
    ═══════════════════════════════════════════════════════════════════ */
-const makeNull = () => ({ ratioYoY: null, ratioIMM: null, activations: 0, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, impactPartners: [], eventStatus: null, fwdRange: null, yoyRange: null, immRange: null, fwdAvail: false, yoyAvail: false, immAvail: false });
+const makeNull = () => ({ ratioYoY: null, ratioIMM: null, histYoY: 0, fwdYoY: 0, histIMM: 0, fwdIMM: 0, impactPartners: [], eventStatus: null, fwdRange: null, yoyRange: null, immRange: null, fwdAvail: false, yoyAvail: false, immAvail: false });
 
 const idxGet = (idx, mode, vm, pid, prod, ym) => { const k = mode === "total" ? pid + "|||" + ym : pid + "|||" + prod + "|||" + ym; return (vm === "customers" ? (mode === "total" ? idx.custPM.get(k) : idx.custPPM.get(k)) : (mode === "total" ? idx.byPM.get(k) : idx.byPPM.get(k))) || 0; };
 
@@ -100,19 +100,17 @@ const calcEventImpact = (group, idx, mode, fwdN, vm) => {
   const yoyAvail = yoy.every(ym => idx.months.has(ym));
   const immAvail = imm.every(ym => idx.months.has(ym));
   const sum = (pid, ms) => { let s = 0; for (const ym of ms) s += idxGet(idx, mode, vm, pid, group.product, ym); return s; };
-  const partners = []; let hY = 0, fY = 0, hI = 0, fI = 0, act = 0;
+  const partners = []; let hY = 0, fY = 0, hI = 0, fI = 0;
   for (const pid of group.partners) {
     const first = idx.partnerFirst.get(pid);
     const fSum = first ? sum(pid, fwd) : 0;
-    const isAct = fSum > 0 && first > eYM;
-    if (isAct) act++;
     let rY = null, pHY = 0, pFY = 0;
-    if (yoyAvail && first) { const h = sum(pid, yoy); pHY = h; pFY = fSum; hY += h; fY += fSum; if (h > 0) { rY = fSum / h; } else if (fSum > 0 && !isAct) { rY = Infinity; } }
+    if (yoyAvail && first) { const h = sum(pid, yoy); pHY = h; pFY = fSum; hY += h; fY += fSum; if (h > 0) { rY = fSum / h; } else if (fSum > 0) { rY = Infinity; } }
     let rI = null, pHI = 0, pFI = 0;
-    if (immAvail && first) { const h = sum(pid, imm); pHI = h; pFI = fSum; hI += h; fI += fSum; if (h > 0) { rI = fSum / h; } else if (fSum > 0 && !isAct) { rI = Infinity; } }
-    partners.push({ pid, ratioYoY: rY, ratioIMM: rI, activation: isAct, found: !!first, histYoY: pHY, fwdYoY: pFY, histIMM: pHI, fwdIMM: pFI });
+    if (immAvail && first) { const h = sum(pid, imm); pHI = h; pFI = fSum; hI += h; fI += fSum; if (h > 0) { rI = fSum / h; } else if (fSum > 0) { rI = Infinity; } }
+    partners.push({ pid, ratioYoY: rY, ratioIMM: rI, found: !!first, histYoY: pHY, fwdYoY: pFY, histIMM: pHI, fwdIMM: pFI });
   }
-  return { ratioYoY: hY > 0 ? fY / hY : (fY > 0 && act === 0 ? Infinity : null), ratioIMM: hI > 0 ? fI / hI : (fI > 0 && act === 0 ? Infinity : null), activations: act, histYoY: hY, fwdYoY: fY, histIMM: hI, fwdIMM: fI, impactPartners: partners, eventStatus: "ok", fwdRange: fwd, yoyRange: yoy, immRange: imm, fwdAvail: true, yoyAvail, immAvail };
+  return { ratioYoY: hY > 0 ? fY / hY : (fY > 0 ? Infinity : null), ratioIMM: hI > 0 ? fI / hI : (fI > 0 ? Infinity : null), histYoY: hY, fwdYoY: fY, histIMM: hI, fwdIMM: fI, impactPartners: partners, eventStatus: "ok", fwdRange: fwd, yoyRange: yoy, immRange: imm, fwdAvail: true, yoyAvail, immAvail };
 };
 
 const calcBaselines = (group, idx, mode, fwdN, vm) => {
@@ -139,15 +137,14 @@ const DASH = { text: "—", color: "text-gray-400" };
 const NO_CSV = { text: "No CSV", color: "text-gray-400" };
 const n = (v) => v == null ? "—" : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const rc = (r) => r == null ? "text-gray-400" : r >= 1.5 ? "text-emerald-600" : r >= 1 ? "text-emerald-500" : r >= 0.8 ? "text-amber-500" : "text-red-500";
-const sv = (r, act, csvOk) => !csvOk ? -1e16 : (r != null && isFinite(r)) ? r : act ? -1e10 : r === Infinity ? -1e11 : -1e15;
+const sv = (r, csvOk) => !csvOk ? -1e16 : (r != null && isFinite(r)) ? r : r === Infinity ? -1e11 : -1e15;
 const fmtDate = (s, short = true) => { const d = parseD(s); if (!d) return ""; return d.getUTCDate() + "-" + MO[d.getUTCMonth()] + "-" + (short ? String(d.getUTCFullYear()).slice(2) : d.getUTCFullYear()); };
 const fmtYM = (ym) => { const [y, m] = ym.split("-").map(Number); return MO[m - 1] + "-" + String(y).slice(2); };
 const monthRange = (ms, arrow = "→") => !ms || !ms.length ? "—" : ms.length === 1 ? fmtYM(ms[0]) : fmtYM(ms[0]) + " " + arrow + " " + fmtYM(ms[ms.length - 1]);
 const HL = (text, q) => { if (!q) return text; const p = [], lo = text.toLowerCase(), ql = q.toLowerCase(); let last = 0, i; while ((i = lo.indexOf(ql, last)) !== -1) { if (i > last) p.push(text.slice(last, i)); p.push(<span key={i} className="bg-blue-600 text-white rounded-sm px-0.5">{text.slice(i, i + ql.length)}</span>); last = i + ql.length; } if (last < text.length) p.push(text.slice(last)); return p.length ? <>{p}</> : text; };
-const formatImpact = (ratio, activation, csvOk) => {
+const formatImpact = (ratio, csvOk) => {
   if (!csvOk) return NO_CSV;
   if (ratio != null && isFinite(ratio)) return { text: n(ratio) + "x", color: rc(ratio) };
-  if (activation) return { text: "Activation", color: "text-emerald-600" };
   if (ratio === Infinity) return { text: "∞", color: "text-emerald-600" };
   return DASH;
 };
@@ -300,7 +297,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
           <DotNav count={2} active={lb1Page} onChange={setLb1Page}/>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {!lb1List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb1Page===0?lb1List.map(e=>{const val=isImp(lb1View)?formatImpact(lb1View==="yoy"?e.ratioYoY:e.ratioIMM,false,true):null;return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:e.totalPartners}</span></div>;}):lb1List.map(p=>{const name=globalNameMap[p.pid];const val=isImp(lb1View)?formatImpact(p.ratio,false,true):null;return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:p.events}</span></div>;})}</div>)}
+          {!lb1List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb1Page===0?lb1List.map(e=>{const val=isImp(lb1View)?formatImpact(lb1View==="yoy"?e.ratioYoY:e.ratioIMM,true):null;return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:e.totalPartners}</span></div>;}):lb1List.map(p=>{const name=globalNameMap[p.pid];const val=isImp(lb1View)?formatImpact(p.ratio,true):null;return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:p.events}</span></div>;})}</div>)}
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
@@ -309,7 +306,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
           <DotNav count={5} active={lb2Page} onChange={setLb2Page}/>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {!lb2List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb2List.map(d=>{const val=isImp(lb2View)?formatImpact(lb2View==="yoy"?d.avgRatioYoY:d.avgRatioIMM,false,true):null;return <div key={d.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 font-medium">{d.key}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb2View)?val.color:"text-blue-600")}>{isImp(lb2View)?val.text:d.totalPartners}</span></div>;})}</div>)}
+          {!lb2List.length?<p className="text-lg font-bold text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb2List.map(d=>{const val=isImp(lb2View)?formatImpact(lb2View==="yoy"?d.avgRatioYoY:d.avgRatioIMM,true):null;return <div key={d.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 font-medium">{d.key}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb2View)?val.color:"text-blue-600")}>{isImp(lb2View)?val.text:d.totalPartners}</span></div>;})}</div>)}
         </div>
       </div>
     </div>
@@ -354,8 +351,8 @@ const EventTable = ({ sortedGrouped, tableOvr, fName, sortCol, sortDir, toggleSo
       <th className="px-4 py-3"></th>
     </tr></thead><tbody className="divide-y divide-gray-100">{pageData.map(g => {
       const yoyOk = g.fwdAvail && g.yoyAvail, immOk = g.fwdAvail && g.immAvail;
-      const iY = formatImpact(g.ratioYoY, g.activations > 0, yoyOk), iI = formatImpact(g.ratioIMM, g.activations > 0, immOk);
-      const bY = formatImpact(g.baselineYoY, false, yoyOk), bI = formatImpact(g.baselineIMM, false, immOk);
+      const iY = formatImpact(g.ratioYoY, yoyOk), iI = formatImpact(g.ratioIMM, immOk);
+      const bY = formatImpact(g.baselineYoY, yoyOk), bI = formatImpact(g.baselineIMM, immOk);
       return(<tr key={g.key} className="hover:bg-gray-50 transition">
         <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{HL(g.eventName, fName.trim())}</td>
         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(g.eventDate)}</td>
@@ -448,8 +445,8 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
     return { data, markers, partnerID: p.pid };
   }, [modal, selIdx, salesIndex, events, analysisMode, valueMode]);
 
-  const mIY = formatImpact(modal.ratioYoY, modal.activations > 0, yoyOk), mII = formatImpact(modal.ratioIMM, modal.activations > 0, immOk);
-  const mBY = formatImpact(modal.baselineYoY, false, yoyOk), mBI = formatImpact(modal.baselineIMM, false, immOk);
+  const mIY = formatImpact(modal.ratioYoY, yoyOk), mII = formatImpact(modal.ratioIMM, immOk);
+  const mBY = formatImpact(modal.baselineYoY, yoyOk), mBI = formatImpact(modal.baselineIMM, immOk);
   const pd = modal.partnerDetails || {};
 
   return (
@@ -500,8 +497,8 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
               <th className="px-4 py-3"></th>
             </tr></thead><tbody className="divide-y divide-gray-100">{(()=>{
               const indexed = modal.impactPartners.map((p,i)=>({...p,origIdx:i}));
-              const sorted = mSortCol?[...indexed].sort((a,b)=>{const csvOk=mSortCol==="impactYoY"?yoyOk:immOk;const av=sv(mSortCol==="impactYoY"?a.ratioYoY:a.ratioIMM,a.activation,csvOk),bv=sv(mSortCol==="impactYoY"?b.ratioYoY:b.ratioIMM,b.activation,csvOk);const d=mSortDir==="desc"?bv-av:av-bv;return d!==0?d:a.pid.localeCompare(b.pid);}):indexed;
-              return sorted.map(p=>{const isSel=selIdx===p.origIdx;const pIY=formatImpact(p.ratioYoY,p.activation,yoyOk),pII=formatImpact(p.ratioIMM,p.activation,immOk);const det=pd[p.pid]||{regs:0,att:0};
+              const sorted = mSortCol?[...indexed].sort((a,b)=>{const csvOk=mSortCol==="impactYoY"?yoyOk:immOk;const av=sv(mSortCol==="impactYoY"?a.ratioYoY:a.ratioIMM,csvOk),bv=sv(mSortCol==="impactYoY"?b.ratioYoY:b.ratioIMM,csvOk);const d=mSortDir==="desc"?bv-av:av-bv;return d!==0?d:a.pid.localeCompare(b.pid);}):indexed;
+              return sorted.map(p=>{const isSel=selIdx===p.origIdx;const pIY=formatImpact(p.ratioYoY,yoyOk),pII=formatImpact(p.ratioIMM,immOk);const det=pd[p.pid]||{regs:0,att:0};
                 return(<tr key={p.origIdx} className="transition hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.pid}</td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{pNameMap[p.pid] || ""}</td>
@@ -694,16 +691,16 @@ function App() {
       if (sortCol==="registrations") { av=a.totalRegistrations; bv=b.totalRegistrations; }
       else if (sortCol==="attendance") { av=a.totalPartners; bv=b.totalPartners; }
       else if (sortCol==="attendees") { av=a.totalAttendees; bv=b.totalAttendees; }
-      else if (sortCol==="ratioYoY") { av=sv(a.ratioYoY,a.activations>0,a.fwdAvail&&a.yoyAvail); bv=sv(b.ratioYoY,b.activations>0,b.fwdAvail&&b.yoyAvail); }
-      else if (sortCol==="ratioIMM") { av=sv(a.ratioIMM,a.activations>0,a.fwdAvail&&a.immAvail); bv=sv(b.ratioIMM,b.activations>0,b.fwdAvail&&b.immAvail); }
+      else if (sortCol==="ratioYoY") { av=sv(a.ratioYoY,a.fwdAvail&&a.yoyAvail); bv=sv(b.ratioYoY,b.fwdAvail&&b.yoyAvail); }
+      else if (sortCol==="ratioIMM") { av=sv(a.ratioIMM,a.fwdAvail&&a.immAvail); bv=sv(b.ratioIMM,b.fwdAvail&&b.immAvail); }
       else if (sortCol==="blUniverse") { av=a.baselineUniverse; bv=b.baselineUniverse; }
-      else if (sortCol==="blYoY") { av=sv(a.baselineYoY,false,a.fwdAvail&&a.yoyAvail); bv=sv(b.baselineYoY,false,b.fwdAvail&&b.yoyAvail); }
-      else if (sortCol==="blIMM") { av=sv(a.baselineIMM,false,a.fwdAvail&&a.immAvail); bv=sv(b.baselineIMM,false,b.fwdAvail&&b.immAvail); }
+      else if (sortCol==="blYoY") { av=sv(a.baselineYoY,a.fwdAvail&&a.yoyAvail); bv=sv(b.baselineYoY,b.fwdAvail&&b.yoyAvail); }
+      else if (sortCol==="blIMM") { av=sv(a.baselineIMM,a.fwdAvail&&a.immAvail); bv=sv(b.baselineIMM,b.fwdAvail&&b.immAvail); }
       else if (sortCol==="date") { av=new Date(a.eventDate).getTime()||0; bv=new Date(b.eventDate).getTime()||0; }
       const d=sortDir==="desc"?bv-av:av-bv; return d!==0?d:new Date(b.eventDate)-new Date(a.eventDate); });
   }, [allGrouped, sortCol, sortDir, debouncedName]);
 
-  const tableOvr = useMemo(() => { if (!sales.length || !allGrouped.length) return null; const ok = allGrouped.filter(g => g.eventStatus === "ok"); if (!ok.length) return null; const hY = _.sumBy(ok, "histYoY"), fY = _.sumBy(ok, "fwdYoY"), hI = _.sumBy(ok, "histIMM"), fI = _.sumBy(ok, "fwdIMM"), act = _.sumBy(ok, "activations"); return { yoy: formatImpact(hY > 0 ? fY / hY : (fY > 0 && act === 0 ? Infinity : null), act > 0 && hY === 0 && fY > 0, true), imm: formatImpact(hI > 0 ? fI / hI : (fI > 0 && act === 0 ? Infinity : null), act > 0 && hI === 0 && fI > 0, true) }; }, [allGrouped, sales]);
+  const tableOvr = useMemo(() => { if (!sales.length || !allGrouped.length) return null; const ok = allGrouped.filter(g => g.eventStatus === "ok"); if (!ok.length) return null; const hY = _.sumBy(ok, "histYoY"), fY = _.sumBy(ok, "fwdYoY"), hI = _.sumBy(ok, "histIMM"), fI = _.sumBy(ok, "fwdIMM"); return { yoy: formatImpact(hY > 0 ? fY / hY : (fY > 0 ? Infinity : null), true), imm: formatImpact(hI > 0 ? fI / hI : (fI > 0 ? Infinity : null), true) }; }, [allGrouped, sales]);
 
   const summaryData = useMemo(() => {
     if (!allGrouped.length || !sales.length) return null;
