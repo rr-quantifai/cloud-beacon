@@ -125,7 +125,10 @@ const calcBaselines = (group, idx, mode, fwdN, vm) => {
   const sum = (pid, ms) => { let s = 0; for (const ym of ms) s += idxGet(idx, mode, vm, pid, group.product, ym); return s; };
   let bF = 0, bY = 0, bI = 0;
   for (const pid of group.nonAttendingPartners) { bF += sum(pid, fwd); if (yoyAvail) bY += sum(pid, yoy); if (immAvail) bI += sum(pid, imm); }
-  return { yoy: yoyAvail && bY > 0 ? bF / bY : null, imm: immAvail && bI > 0 ? bF / bI : null };
+  return {
+  yoy: yoyAvail ? (bY > 0 ? bF / bY : (bF > 0 ? Infinity : null)) : null,
+  imm: immAvail ? (bI > 0 ? bF / bI : (bF > 0 ? Infinity : null)) : null
+};
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -700,7 +703,7 @@ function App() {
       const d=sortDir==="desc"?bv-av:av-bv; return d!==0?d:new Date(b.eventDate)-new Date(a.eventDate); });
   }, [allGrouped, sortCol, sortDir, debouncedName]);
 
-  const tableOvr = useMemo(() => { if (!sales.length || !allGrouped.length) return null; const ok = allGrouped.filter(g => g.eventStatus === "ok"); if (!ok.length) return null; const hY = _.sumBy(ok, "histYoY"), fY = _.sumBy(ok, "fwdYoY"), hI = _.sumBy(ok, "histIMM"), fI = _.sumBy(ok, "fwdIMM"); return { yoy: formatImpact(hY > 0 ? fY / hY : null, false, true), imm: formatImpact(hI > 0 ? fI / hI : null, false, true) }; }, [allGrouped, sales]);
+  const tableOvr = useMemo(() => { if (!sales.length || !allGrouped.length) return null; const ok = allGrouped.filter(g => g.eventStatus === "ok"); if (!ok.length) return null; const hY = _.sumBy(ok, "histYoY"), fY = _.sumBy(ok, "fwdYoY"), hI = _.sumBy(ok, "histIMM"), fI = _.sumBy(ok, "fwdIMM"), act = _.sumBy(ok, "activations"); return { yoy: formatImpact(hY > 0 ? fY / hY : (fY > 0 && act === 0 ? Infinity : null), act > 0 && hY === 0 && fY > 0, true), imm: formatImpact(hI > 0 ? fI / hI : (fI > 0 && act === 0 ? Infinity : null), act > 0 && hI === 0 && fI > 0, true) }; }, [allGrouped, sales]);
 
   const summaryData = useMemo(() => {
     if (!allGrouped.length || !sales.length) return null;
