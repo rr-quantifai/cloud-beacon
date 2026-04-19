@@ -133,8 +133,8 @@ const calcBaselines = (group, idx, mode, fwdN, vm) => {
    DISPLAY HELPERS
    ═══════════════════════════════════════════════════════════════════ */
 const descTie = (valFn, dateFn) => (a, b) => { const d = valFn(b) - valFn(a); return d !== 0 ? d : (new Date(dateFn(b)) - new Date(dateFn(a))); };
-const DASH = { text: "—", color: "text-gray-400" };
-const NO_CSV = { text: "No CSV", color: "text-gray-400" };
+const DASH =   { text: "—",      color: "text-gray-400", cls: "" };
+const NO_CSV = { text: "No CSV", color: "text-gray-400", cls: "" };
 const n = (v) => v == null ? "—" : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const rc = (r) => r == null ? "text-gray-400" : r >= 1.5 ? "text-emerald-600" : r >= 1 ? "text-emerald-500" : r >= 0.8 ? "text-amber-500" : "text-red-500";
 const sv = (r, csvOk) => !csvOk ? -1e16 : (r != null && isFinite(r)) ? r : r === Infinity ? -1e11 : -1e15;
@@ -144,8 +144,8 @@ const monthRange = (ms, arrow = "→") => !ms || !ms.length ? "—" : ms.length 
 const HL = (text, q) => { if (!q) return text; const p = [], lo = text.toLowerCase(), ql = q.toLowerCase(); let last = 0, i; while ((i = lo.indexOf(ql, last)) !== -1) { if (i > last) p.push(text.slice(last, i)); p.push(<span key={i} className="bg-blue-600 text-white rounded-sm px-0.5">{text.slice(i, i + ql.length)}</span>); last = i + ql.length; } if (last < text.length) p.push(text.slice(last)); return p.length ? <>{p}</> : text; };
 const formatImpact = (ratio, csvOk) => {
   if (!csvOk) return NO_CSV;
-  if (ratio != null && isFinite(ratio)) return { text: n(ratio) + "x", color: rc(ratio) };
-  if (ratio === Infinity) return { text: "∞", color: "text-emerald-600" };
+  if (ratio != null && isFinite(ratio)) return { text: n(ratio) + "x", color: rc(ratio), cls: "font-bold" };
+  if (ratio === Infinity) return { text: "∞", color: "text-gray-400", cls: "" };
   return DASH;
 };
 
@@ -328,7 +328,7 @@ const EventTable = ({ sortedGrouped, tableOvr, fName, sortCol, sortDir, toggleSo
     <div className="p-4 border-b border-gray-100"><div className="flex items-center justify-between">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-sm font-semibold text-gray-700">{sortedGrouped.length} Event{sortedGrouped.length!==1?"s":""}</span>
-        {tableOvr&&<><span className="text-gray-300">·</span><span className="text-xs text-gray-400">Table Overall</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm font-bold ml-1 "+tableOvr.yoy.color}>{tableOvr.yoy.text}</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm font-bold ml-1 "+tableOvr.imm.color}>{tableOvr.imm.text}</span></>}
+        {tableOvr&&<><span className="text-gray-300">·</span><span className="text-xs text-gray-400">Table Overall</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm ml-1 "+tableOvr.yoy.color+" "+tableOvr.yoy.cls}>{tableOvr.yoy.text}</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm ml-1 "+tableOvr.imm.color+" "+tableOvr.imm.cls}>{tableOvr.imm.text}</span></>}
       </div>
       <div className="flex items-center flex-shrink-0">
         <button onClick={() => setPage(0)} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>First</button>
@@ -367,11 +367,11 @@ const EventTable = ({ sortedGrouped, tableOvr, fName, sortCol, sortDir, toggleSo
         <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.yoyRange)}</td>
         <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.immRange, "←")}</td>
         <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(g.fwdRange)}</td>
-        <td className={"px-4 py-3 font-bold whitespace-nowrap "+iY.color}>{iY.text}</td>
-        <td className={"px-4 py-3 font-bold whitespace-nowrap "+iI.color}>{iI.text}</td>
+        <td className={"px-4 py-3 whitespace-nowrap "+iY.color+" "+iY.cls}>{iY.text}</td>
+        <td className={"px-4 py-3 whitespace-nowrap "+iI.color+" "+iI.cls}>{iI.text}</td>
         <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{g.baselineUniverse}</td>
-        <td className={"px-4 py-3 font-bold whitespace-nowrap "+bY.color}>{bY.text}</td>
-        <td className={"px-4 py-3 font-bold whitespace-nowrap "+bI.color}>{bI.text}</td>
+        <td className={"px-4 py-3 whitespace-nowrap "+bY.color+" "+bY.cls}>{bY.text}</td>
+        <td className={"px-4 py-3 whitespace-nowrap "+bI.color+" "+bI.cls}>{bI.text}</td>
         <td className="px-4 py-3"><button onClick={()=>openModal(g)} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">Partner Analysis</button></td>
       </tr>);})}</tbody></table></div>
   </div>
@@ -477,8 +477,8 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
           <div className="px-6 pt-4 pb-6">
             <div className="flex items-center mb-4"><div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-gray-400">Table Overall</span>
-              <span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm font-bold "+mIY.color}>{mIY.text}</span>
-              <span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm font-bold "+mII.color}>{mII.text}</span>
+              <span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm "+mIY.color+" "+mIY.cls}>{mIY.text}</span>
+              <span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm "+mII.color+" "+mII.cls}>{mII.text}</span>
             </div></div>
             {!modal.impactPartners.length?(<div className="py-6 text-center text-sm text-gray-400">{!sales.length?"Upload Sales Data":"—"}</div>):(
             <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50">
@@ -507,11 +507,11 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.yoyRange)}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.immRange, "←")}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{monthRange(modal.fwdRange)}</td>
-                <td className={"px-4 py-3 font-bold whitespace-nowrap "+pIY.color}>{pIY.text}</td>
-                <td className={"px-4 py-3 font-bold whitespace-nowrap "+pII.color}>{pII.text}</td>
+                <td className={"px-4 py-3 whitespace-nowrap "+pIY.color+" "+pIY.cls}>{pIY.text}</td>
+                <td className={"px-4 py-3 whitespace-nowrap "+pII.color+" "+pII.cls}>{pII.text}</td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{modal.baselineUniverse}</td>
-                <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBY.color}>{mBY.text}</td>
-                <td className={"px-4 py-3 font-bold whitespace-nowrap "+mBI.color}>{mBI.text}</td>
+                <td className={"px-4 py-3 whitespace-nowrap "+mBY.color+" "+mBY.cls}>{mBY.text}</td>
+                <td className={"px-4 py-3 whitespace-nowrap "+mBI.color+" "+mBI.cls}>{mBI.text}</td>
                 <td className="px-4 py-3"><button onClick={()=>setSelIdx(isSel?null:p.origIdx)} disabled={!p.found} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition border "+(!p.found?"text-gray-300 bg-white border-gray-200 cursor-not-allowed":isSel?"text-blue-600 bg-white border-blue-400 hover:border-blue-500":"text-gray-400 bg-white border-gray-300 hover:border-blue-300")}>Chart</button></td>
               </tr>);});
             })()}</tbody></table></div></div>)}
