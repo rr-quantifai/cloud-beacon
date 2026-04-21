@@ -198,7 +198,6 @@ const DateFilter = ({ tree, selected, onChange, placeholder }) => {
   const displayText = selected.length === 0 ? (placeholder || "All") : selected.length === 1 ? fmtDate(selected[0], false) : "Multiple selections";
   return (
     <div ref={ref} className="relative">
-      <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
       <div onClick={() => setOpen(!open)} className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] flex items-center cursor-pointer " + (selected.length > 0 ? "border-blue-400 hover:border-blue-500" : "border-gray-200 hover:border-blue-300")}>
         <span className={(selected.length > 0 ? "text-blue-600" : "text-gray-400") + " truncate"}>{displayText}</span>
       </div>
@@ -260,7 +259,8 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
+cconst FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
+  const [salesVisible, setSalesVisible] = useState(false);
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const partnerSales = useMemo(() => {
     const ms = sortedMonths.slice(-3);
@@ -278,23 +278,24 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-        <div><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
-        <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} placeholder="Filter by date..."/>
-        <MultiSel values={fProd} onChange={setFProd} options={fo.prods} placeholder="Filter by product..."/>
-        <MultiSel values={fType} onChange={setFType} options={fo.types} placeholder="Filter by type..."/>
-        <MultiSel values={fVenue} onChange={setFVenue} options={fo.venues} placeholder="Filter by venue..."/>
-        <MultiSel values={fCountry} onChange={setFCountry} options={fo.countries} placeholder="Filter by country..."/>
-        <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider..."/>
+        <div><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
+        <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} placeholder="Filter by date"/>
+        <MultiSel values={fProd} onChange={setFProd} options={fo.prods} placeholder="Filter by product"/>
+        <MultiSel values={fType} onChange={setFType} options={fo.types} placeholder="Filter by type"/>
+        <MultiSel values={fVenue} onChange={setFVenue} options={fo.venues} placeholder="Filter by venue"/>
+        <MultiSel values={fCountry} onChange={setFCountry} options={fo.countries} placeholder="Filter by country"/>
+        <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider"/>
       </div>
       <div className="border-t border-gray-100 mt-3 pt-3 flex items-center gap-3">
-        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Filter by ID..." className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate w-40 flex-shrink-0 " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/>
-        {partnerSales && (<div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
-          {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (fPid.trim() && m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}
+        <input type="text" value={fPid} onChange={e=>{onPidChange(e.target.value);setSalesVisible(false);}} placeholder="Filter by ID" className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate w-40 flex-shrink-0 " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/>
+        <button onClick={()=>setSalesVisible(true)} disabled={!fPid.trim()} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 " + (!fPid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
+        {salesVisible && partnerSales && (<div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+          {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}
           <span className="text-gray-300">·</span>
           <span className="text-xs font-bold text-gray-500 uppercase">Total:</span>
-          <span className={"text-sm font-bold ml-1 " + (fPid.trim() && partnerSales.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(partnerSales.total)}</span>
+          <span className={"text-sm font-bold ml-1 " + (partnerSales.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(partnerSales.total)}</span>
         </div>)}
-        <button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap ml-auto flex-shrink-0">Reset All</button>
+        <button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");setSalesVisible(false);}} className="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition whitespace-nowrap h-[36px] flex-shrink-0 ml-auto">Reset All</button>
       </div>
     </div>
   );
@@ -731,7 +732,7 @@ function App() {
     <div className="min-h-screen bg-gray-50" style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div className="bg-white border-b border-gray-200"><div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h1 className="text-lg font-bold text-gray-900 leading-tight tracking-tight">Cloud Beacon</h1><p className="text-xs text-gray-400">Event impact analyzer</p></div></div>
-        <div className="flex items-center gap-3"><span className="flex items-center text-xs whitespace-nowrap"><span className="text-gray-500">Event CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.evt}</span><span className="text-gray-300 mx-3">·</span><span className="text-gray-500">Sales CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.sal}</span></span><div className="w-px h-5 bg-gray-200"/><button onClick={clearAll} disabled={mode==="test"} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(mode==="test"?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button><div className="flex bg-gray-100 rounded-lg p-0.5 h-[32px]"><button onClick={()=>setMode("test")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-red-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-emerald-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div></div>
+        <div className="flex items-center gap-3"><span className="flex items-center text-xs whitespace-nowrap"><span className="text-gray-500">Event CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.evt}</span><span className="text-gray-300 mx-3">·</span><span className="text-gray-500">Sales CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.sal}</span></span><div className="w-px h-5 bg-gray-200"/><button onClick={clearAll} disabled={mode==="test"||(!events.length&&!sales.length)} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(mode==="test"||(!events.length&&!sales.length)?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button><div className="flex bg-gray-100 rounded-lg p-0.5 h-[32px]"><button onClick={()=>setMode("test")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-red-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-emerald-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div></div>
       </div></div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
