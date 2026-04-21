@@ -259,7 +259,7 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, activePid, setActivePid, salesIndex, valueMode }) => {
   const [salesVisible, setSalesVisible] = useState(false);
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const partnerSales = useMemo(() => {
@@ -278,7 +278,7 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-        <div><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Filter by name" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
+        <div><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
         <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} placeholder="Filter by date"/>
         <MultiSel values={fProd} onChange={setFProd} options={fo.prods} placeholder="Filter by product"/>
         <MultiSel values={fType} onChange={setFType} options={fo.types} placeholder="Filter by type"/>
@@ -287,9 +287,9 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
         <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider"/>
       </div>
       <div className="border-t border-gray-100 mt-3 pt-3 flex items-center gap-3">
-        <input type="text" value={fPid} onChange={e=>{onPidChange(e.target.value);setSalesVisible(false);}} placeholder="Filter by ID" className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate w-40 flex-shrink-0 " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/>
-        <button onClick={()=>setSalesVisible(true)} disabled={!fPid.trim()} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 " + (!fPid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
-        {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim();return(<button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");setSalesVisible(false);}} disabled={noFilters} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 "+(noFilters?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-gray-600 bg-gray-100 hover:bg-gray-200")}>Reset All</button>);})()}
+        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} readOnly={!!activePid} placeholder="Filter by ID" className={"px-2.5 py-1.5 text-sm border rounded-lg h-[36px] placeholder-gray-400 focus:outline-none truncate w-40 flex-shrink-0 " + (activePid ? "bg-blue-50 border-blue-300 text-blue-600 cursor-not-allowed" : fPid.trim() ? "bg-white border-blue-400 text-blue-600 focus:border-blue-500" : "bg-white border-gray-200 text-gray-800 focus:border-blue-300")}/>
+        <button onClick={()=>{setActivePid(fPid.trim());setSalesVisible(true);}} disabled={!fPid.trim()||!!activePid} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 " + (activePid ? "text-blue-600 bg-blue-100 cursor-not-allowed" : !fPid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
+        {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim()&&!activePid;return(<button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");setActivePid("");setSalesVisible(false);}} disabled={noFilters} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 "+(noFilters?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-gray-600 bg-gray-100 hover:bg-gray-200")}>Reset All</button>);})()}
         {partnerSales && (<div className="flex items-center gap-3 flex-wrap ml-auto flex-shrink-0">
           {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (salesVisible && m.val > 0 ? "text-gray-900" : "text-gray-400")}>{salesVisible ? n(m.val) : n(0)}</span></span>))}
           <span className="text-gray-300">·</span>
@@ -548,7 +548,7 @@ function App() {
   const [valueMode, setValueMode] = useState("value");
   const [fwdMonths, setFwdMonths] = useState(1);
   const [fDates, setFDates] = useState([]); const [fProd,setFProd]=useState([]); const [fType,setFType]=useState([]);
-  const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]); const [fPid,setFPid]=useState("");
+  const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]); const [fPid,setFPid]=useState(""); const [activePid,setActivePid]=useState("");
   const [fName, setFName] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
   const nameTimer = useRef(null);
@@ -645,10 +645,9 @@ function App() {
     if (fVenue.length) groups = groups.filter(g => fVenue.includes(g.venue));
     if (fCountry.length) groups = groups.filter(g => fCountry.includes(g.country));
     if (fProvider.length) groups = groups.filter(g => fProvider.includes(g.provider));
-    if (fPid.trim()) { const pid = fPid.trim(); const r = groups.filter(g => g.partners.includes(pid)); if (r.length) groups = r; }
-    if (debouncedName.trim()) { const q = debouncedName.trim().toLowerCase(); const r = groups.filter(g => g.eventName.toLowerCase().includes(q)); if (r.length) groups = r; }
+    if (activePid) { const r = groups.filter(g => g.partners.includes(activePid)); if (r.length) groups = r; }
     return groups;
-  }, [impactCache, fDates, fProd, fType, fVenue, fCountry, fProvider, fPid, debouncedName]);
+  }, [impactCache, fDates, fProd, fType, fVenue, fCountry, fProvider, activePid]);
 
   const fo = useMemo(() => {
     const allGroups = allEventsGrouped;
@@ -656,28 +655,23 @@ function App() {
     const typeSet = fType.length ? new Set(fType) : null, venueSet = fVenue.length ? new Set(fVenue) : null;
     const countrySet = fCountry.length ? new Set(fCountry) : null, providerSet = fProvider.length ? new Set(fProvider) : null;
     const dateMap = {}, prods = new Set(), types = new Set(), venues = new Set(), countries = new Set(), providers = new Set();
-    const pidActive = fPid.trim();
-    const nameActive = debouncedName.trim().toLowerCase();
-    const pidHasResults = !pidActive || allGroups.some(g => g.partners.includes(pidActive));
-    const nameHasResults = !nameActive || allGroups.some(g => g.eventName.toLowerCase().includes(nameActive));
-    const effectivePid = pidHasResults ? pidActive : "";
-    const effectiveName = nameHasResults ? nameActive : "";
+    const pidHasResults = !activePid || allGroups.some(g => g.partners.includes(activePid));
+    const effectivePid = pidHasResults ? activePid : "";
     for (const g of allGroups) {
       const pDate = !dateSet || dateSet.has(g.eventDate), pProd = !prodSet || prodSet.has(g.product);
       const pType = !typeSet || typeSet.has(g.eventType), pVenue = !venueSet || venueSet.has(g.venue);
       const pCountry = !countrySet || countrySet.has(g.country), pProvider = !providerSet || providerSet.has(g.provider);
       const pPid = !effectivePid || g.partners.includes(effectivePid);
-      const pName = !effectiveName || g.eventName.toLowerCase().includes(effectiveName);
-      if (pProd && pType && pVenue && pCountry && pProvider && pPid && pName) { const d = parseD(g.eventDate); if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); } }
-      if (pDate && pType && pVenue && pCountry && pProvider && pPid && pName && g.product) prods.add(g.product);
-      if (pDate && pProd && pVenue && pCountry && pProvider && pPid && pName && g.eventType) types.add(g.eventType);
-      if (pDate && pProd && pType && pCountry && pProvider && pPid && pName && g.venue) venues.add(g.venue);
-      if (pDate && pProd && pType && pVenue && pProvider && pPid && pName && g.country) countries.add(g.country);
-      if (pDate && pProd && pType && pVenue && pCountry && pPid && pName && g.provider) providers.add(g.provider);
+      if (pProd && pType && pVenue && pCountry && pProvider && pPid) { const d = parseD(g.eventDate); if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); } }
+      if (pDate && pType && pVenue && pCountry && pProvider && pPid && g.product) prods.add(g.product);
+      if (pDate && pProd && pVenue && pCountry && pProvider && pPid && g.eventType) types.add(g.eventType);
+      if (pDate && pProd && pType && pCountry && pProvider && pPid && g.venue) venues.add(g.venue);
+      if (pDate && pProd && pType && pVenue && pProvider && pPid && g.country) countries.add(g.country);
+      if (pDate && pProd && pType && pVenue && pCountry && pPid && g.provider) providers.add(g.provider);
     }
     const dateTree = Object.keys(dateMap).sort().map(y => ({ year: y, months: Object.keys(dateMap[y]).sort((a,b) => +a - +b).map(m => ({ month: +m, days: [...dateMap[y][m]].sort((a,b) => a-b) })) }));
     return { dateTree, prods: [...prods].sort(), types: [...types].sort(), venues: [...venues].sort(), countries: [...countries].sort(), providers: [...providers].sort() };
-  }, [allEventsGrouped, fDates, fProd, fType, fVenue, fCountry, fProvider, fPid, debouncedName]);
+  }, [allEventsGrouped, fDates, fProd, fType, fVenue, fCountry, fProvider, activePid]);
 
   const toggleSort = (col) => { if (sortCol===col) { if (sortDir==="desc") setSortDir("asc"); else { setSortCol(null); setSortDir("desc"); } } else { setSortCol(col); setSortDir("desc"); } };
 
@@ -720,7 +714,7 @@ function App() {
 
   const clearAll = useCallback(async () => {
     setEvents([]); setSales([]); setModal(null); setUploadState(null); setFlashKeys([]);
-    setFDates([]); setFProd([]); setFType([]); setFVenue([]); setFCountry([]); setFProvider([]); setFName(""); setDebouncedName(""); setFPid("");
+    setFDates([]); setFProd([]); setFType([]); setFVenue([]); setFCountry([]); setFProvider([]); setFName(""); setDebouncedName(""); setFPid(""); setActivePid("");
     setSortCol(null); setSortDir("desc");
     const ek = await psGet("evt_idx") || []; for (const k of ek) await psDel("evt:" + k); await psDel("evt_idx");
     const sk = await psGet("sal_idx") || []; for (const k of sk) await psDel("sal:" + k); await psDel("sal_idx");
@@ -757,7 +751,7 @@ function App() {
 
         {tab==="analytics"&&(<div>
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
-          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} fPid={fPid} onPidChange={setFPid} salesIndex={salesIndex} valueMode={valueMode}/>}
+          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} fPid={fPid} onPidChange={setFPid} activePid={activePid} setActivePid={setActivePid} salesIndex={salesIndex} valueMode={valueMode}/>}
           {!hasEvt?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">Upload event and sales CSVs to get started</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} fName={fName}sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
         </div>)}
