@@ -260,10 +260,10 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange }) => (
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange }) => (
   <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-    <div className="flex items-center mb-3"><h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filters</h3><span className="mx-2 text-gray-300">·</span><button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");}} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Reset</button></div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+    <div className="flex items-center mb-3"><h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filters</h3><span className="mx-2 text-gray-300">·</span><button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Reset</button></div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3">
       <div><label className="block text-xs font-medium text-gray-500 mb-1">Name</label><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Type to find..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
       <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} />
       <MultiSel label="Product" values={fProd} onChange={setFProd} options={fo.prods}/>
@@ -271,6 +271,7 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
       <MultiSel label="Venue" values={fVenue} onChange={setFVenue} options={fo.venues}/>
       <MultiSel label="Country" values={fCountry} onChange={setFCountry} options={fo.countries}/>
       <MultiSel label="Provider" values={fProvider} onChange={setFProvider} options={fo.providers}/>
+      <div><label className="block text-xs font-medium text-gray-500 mb-1">Partner ID</label><input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Type to filter..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
     </div>
   </div>
 );
@@ -375,44 +376,6 @@ const EventTable = ({ sortedGrouped, tableOvr, fName, sortCol, sortDir, toggleSo
         <td className="px-4 py-3"><button onClick={()=>openModal(g)} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">Partner Analysis</button></td>
       </tr>);})}</tbody></table></div>
   </div>
-  );
-};
-
-const PartnerLookup = ({ salesIndex, valueMode }) => {
-  const [pid, setPid] = useState("");
-  const [selProds, setSelProds] = useState([]);
-  const [result, setResult] = useState(null);
-  const prods = useMemo(() => { const s = new Set(); for (const k of salesIndex.byPPM.keys()) { const p = k.split("|||"); if (p.length === 3) s.add(p[1]); } return [...s].sort(); }, [salesIndex]);
-  const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
-  const last3 = useMemo(() => { const ms = sortedMonths.slice(-3); return ms.map(ym => ({ ym, val: 0, label: ms.length ? n(0) : "No CSV", color: "text-gray-400" })); }, [sortedMonths]);
-  const doFetch = () => {
-    const id = pid.trim(); if (!id) return;
-    if (!sortedMonths.length) { setResult({ pid: id, months: last3, total: 0 }); return; }
-    const ms = sortedMonths.slice(-3);
-    const useAll = !selProds.length;
-    const vMap = valueMode === "customers" ? salesIndex.custPM : salesIndex.byPM;
-    const vpMap = valueMode === "customers" ? salesIndex.custPPM : salesIndex.byPPM;
-    const months = ms.map(ym => {
-      const v = useAll ? (vMap.get(id + "|||" + ym) || 0) : selProds.reduce((s, p) => s + (vpMap.get(id + "|||" + p + "|||" + ym) || 0), 0);
-      return { ym, val: v };
-    });
-    setResult({ pid: id, months, total: _.sumBy(months, "val") });
-  };
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <input type="text" value={pid} onChange={e => setPid(e.target.value)} onKeyDown={e => e.key === "Enter" && doFetch()} placeholder="Partner ID" className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none focus:border-blue-300 w-40" />
-          <div className="w-40"><MultiSel values={selProds} onChange={setSelProds} options={prods} dropUp /></div>
-          <button onClick={doFetch} disabled={!pid.trim()} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] " + (!pid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap min-w-0 ml-auto">
-          {(()=>{const ms = result ? result.months : last3;
-            return <>{ms.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (m.color || (m.val > 0 ? "text-gray-900" : "text-gray-400"))}>{m.label || n(m.val)}</span></span>))}<span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">TOTAL:</span><span className={"text-sm font-bold ml-1.5 " + (result ? (result.total > 0 ? "text-blue-600" : "text-gray-400") : "text-gray-400")}>{result ? n(result.total) : n(0)}</span></>;
-          })()}
-        </div>
-      </div>
-    </div>
   );
 };
 
@@ -560,7 +523,7 @@ function App() {
   const [valueMode, setValueMode] = useState("value");
   const [fwdMonths, setFwdMonths] = useState(1);
   const [fDates, setFDates] = useState([]); const [fProd,setFProd]=useState([]); const [fType,setFType]=useState([]);
-  const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]);
+  const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]); const [fPid,setFPid]=useState("");
   const [fName, setFName] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
   const nameTimer = useRef(null);
@@ -657,8 +620,9 @@ function App() {
     if (fVenue.length) groups = groups.filter(g => fVenue.includes(g.venue));
     if (fCountry.length) groups = groups.filter(g => fCountry.includes(g.country));
     if (fProvider.length) groups = groups.filter(g => fProvider.includes(g.provider));
+    if (fPid.trim()) { const pid = fPid.trim(); groups = groups.filter(g => g.partners.includes(pid)); }
     return groups;
-  }, [impactCache, fDates, fProd, fType, fVenue, fCountry, fProvider]);
+  }, [impactCache, fDates, fProd, fType, fVenue, fCountry, fProvider, fPid]);
 
   const fo = useMemo(() => {
     const allGroups = allEventsGrouped;
@@ -666,20 +630,22 @@ function App() {
     const typeSet = fType.length ? new Set(fType) : null, venueSet = fVenue.length ? new Set(fVenue) : null;
     const countrySet = fCountry.length ? new Set(fCountry) : null, providerSet = fProvider.length ? new Set(fProvider) : null;
     const dateMap = {}, prods = new Set(), types = new Set(), venues = new Set(), countries = new Set(), providers = new Set();
+    const pidActive = fPid.trim();
     for (const g of allGroups) {
       const pDate = !dateSet || dateSet.has(g.eventDate), pProd = !prodSet || prodSet.has(g.product);
       const pType = !typeSet || typeSet.has(g.eventType), pVenue = !venueSet || venueSet.has(g.venue);
       const pCountry = !countrySet || countrySet.has(g.country), pProvider = !providerSet || providerSet.has(g.provider);
-      if (pProd && pType && pVenue && pCountry && pProvider) { const d = parseD(g.eventDate); if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); } }
-      if (pDate && pType && pVenue && pCountry && pProvider && g.product) prods.add(g.product);
-      if (pDate && pProd && pVenue && pCountry && pProvider && g.eventType) types.add(g.eventType);
-      if (pDate && pProd && pType && pCountry && pProvider && g.venue) venues.add(g.venue);
-      if (pDate && pProd && pType && pVenue && pProvider && g.country) countries.add(g.country);
-      if (pDate && pProd && pType && pVenue && pCountry && g.provider) providers.add(g.provider);
+      const pPid = !pidActive || g.partners.includes(pidActive);
+      if (pProd && pType && pVenue && pCountry && pProvider && pPid) { const d = parseD(g.eventDate); if (d) { const y = "" + d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate(); if (!dateMap[y]) dateMap[y] = {}; if (!dateMap[y][m]) dateMap[y][m] = new Set(); dateMap[y][m].add(day); } }
+      if (pDate && pType && pVenue && pCountry && pProvider && pPid && g.product) prods.add(g.product);
+      if (pDate && pProd && pVenue && pCountry && pProvider && pPid && g.eventType) types.add(g.eventType);
+      if (pDate && pProd && pType && pCountry && pProvider && pPid && g.venue) venues.add(g.venue);
+      if (pDate && pProd && pType && pVenue && pProvider && pPid && g.country) countries.add(g.country);
+      if (pDate && pProd && pType && pVenue && pCountry && pPid && g.provider) providers.add(g.provider);
     }
     const dateTree = Object.keys(dateMap).sort().map(y => ({ year: y, months: Object.keys(dateMap[y]).sort((a,b) => +a - +b).map(m => ({ month: +m, days: [...dateMap[y][m]].sort((a,b) => a-b) })) }));
     return { dateTree, prods: [...prods].sort(), types: [...types].sort(), venues: [...venues].sort(), countries: [...countries].sort(), providers: [...providers].sort() };
-  }, [allEventsGrouped, fDates, fProd, fType, fVenue, fCountry, fProvider]);
+  }, [allEventsGrouped, fDates, fProd, fType, fVenue, fCountry, fProvider, fPid]);
 
   const toggleSort = (col) => { if (sortCol===col) { if (sortDir==="desc") setSortDir("asc"); else { setSortCol(null); setSortDir("desc"); } } else { setSortCol(col); setSortDir("desc"); } };
 
@@ -724,7 +690,7 @@ function App() {
 
   const clearAll = useCallback(async () => {
     setEvents([]); setSales([]); setModal(null); setUploadState(null); setFlashKeys([]);
-    setFDates([]); setFProd([]); setFType([]); setFVenue([]); setFCountry([]); setFProvider([]); setFName(""); setDebouncedName("");
+    setFDates([]); setFProd([]); setFType([]); setFVenue([]); setFCountry([]); setFProvider([]); setFName(""); setDebouncedName(""); setFPid("");
     setSortCol(null); setSortDir("desc");
     const ek = await psGet("evt_idx") || []; for (const k of ek) await psDel("evt:" + k); await psDel("evt_idx");
     const sk = await psGet("sal_idx") || []; for (const k of sk) await psDel("sal:" + k); await psDel("sal_idx");
@@ -761,10 +727,9 @@ function App() {
 
         {tab==="analytics"&&(<div>
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
-          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange}/>}
+          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} fPid={fPid} onPidChange={setFPid}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} fName={fName}sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
-          {hasEvt&&<PartnerLookup salesIndex={salesIndex} valueMode={valueMode} />}
         </div>)}
       </div>
 
