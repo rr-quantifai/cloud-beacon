@@ -277,9 +277,7 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-        <div className="lg:col-span-2 flex items-center gap-3">
-        {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim();return(<button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} disabled={noFilters} title="Reset All" className={"flex-shrink-0 w-[36px] h-[36px] flex items-center justify-center rounded-lg transition "+(noFilters?"text-gray-300 bg-gray-100 cursor-not-allowed":"text-gray-500 bg-gray-100 hover:bg-gray-200")}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>);})()}
-        <div className="flex-1">
+        <div className="lg:col-span-2">
           <div className={"w-full flex items-center border rounded-lg bg-white h-[36px] " + (fName.trim() ? "border-blue-400" : "border-gray-200")}>
             <input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name" className={"flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-transparent placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "text-blue-600" : "text-gray-800")}/>
             <div className="flex items-center flex-shrink-0 px-2.5 gap-2">
@@ -306,6 +304,7 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
           <span className="text-gray-300">·</span>
           <span className="text-xs font-bold text-gray-500 uppercase">Total:</span>
           <span className={"text-sm font-bold ml-1 " + (fPid.trim() && _.sumBy(partnerSales.months,"val") > 0 ? "text-blue-600" : "text-gray-400")}>{fPid.trim() ? n(_.sumBy(partnerSales.months,"val")) : n(0)}</span>
+          {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim();return(<><span className="text-gray-300">·</span><button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} disabled={noFilters} className={"text-xs font-medium transition "+(noFilters?"text-gray-300 cursor-not-allowed":"text-red-500 hover:text-red-700")}>Reset Filters</button></>);})()}
         </div>)}
       </div>
     </div>
