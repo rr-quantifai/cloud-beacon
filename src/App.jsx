@@ -259,7 +259,7 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-cconst FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
   const [salesVisible, setSalesVisible] = useState(false);
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const partnerSales = useMemo(() => {
