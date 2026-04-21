@@ -279,13 +279,11 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <div className="lg:col-span-2">
           <div className={"w-full flex items-center border rounded-lg bg-white h-[36px] " + (fName.trim() ? "border-blue-400" : "border-gray-200")}>
-            <input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Name" className={"flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-transparent placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "text-blue-600" : "text-gray-800")}/>
-            <div className="flex items-center flex-shrink-0 pr-1">
-              <button onClick={onPrevMatch} disabled={!nameMatches.length} className={"px-1 py-1 text-xs font-medium rounded transition " + (!nameMatches.length ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Prev</button>
-              <span className="text-gray-300 mx-1">·</span>
+            <input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name" className={"flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-transparent placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "text-blue-600" : "text-gray-800")}/>
+            <div className="flex items-center flex-shrink-0 px-2.5 gap-2">
               <span className={"text-xs font-medium " + (!nameMatches.length ? "text-gray-300" : "text-gray-500")}>{nameMatches.length ? nameCursor+1 : 0}/{nameMatches.length}</span>
-              <span className="text-gray-300 mx-1">·</span>
-              <button onClick={onNextMatch} disabled={!nameMatches.length} className={"px-1 py-1 text-xs font-medium rounded transition " + (!nameMatches.length ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Next</button>
+              <span className="text-gray-300">·</span>
+              <button onClick={onNextMatch} disabled={!nameMatches.length} className={"text-xs font-medium transition " + (!nameMatches.length ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>Find</button>
             </div>
           </div>
         </div>
@@ -297,9 +295,9 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
       </div>
       <div className="border-t border-gray-100 mt-3 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 items-center">
         <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider"/>
-        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} readOnly={!!activePid} placeholder="ID" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg h-[36px] placeholder-gray-400 focus:outline-none truncate " + (activePid ? "bg-blue-50 border-blue-300 text-blue-600 cursor-not-allowed" : fPid.trim() ? "bg-white border-blue-400 text-blue-600 focus:border-blue-500" : "bg-white border-gray-200 text-gray-800 focus:border-blue-300")}/>
-        <button onClick={()=>{setActivePid(fPid.trim());setSalesVisible(true);}} disabled={!fPid.trim()||!!activePid} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] flex-shrink-0 " + (activePid ? "text-blue-600 bg-blue-100 cursor-not-allowed" : !fPid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
-        {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim()&&!activePid;return(<button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");setActivePid("");setSalesVisible(false);}} disabled={noFilters} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] w-full "+(noFilters?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-gray-600 bg-gray-100 hover:bg-gray-200")}>Reset All</button>);})()}
+        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} readOnly={!!activePid} placeholder="Filter by ID" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg h-[36px] placeholder-gray-400 focus:outline-none truncate " + (activePid ? "bg-blue-50 border-blue-300 text-blue-600 cursor-not-allowed" : fPid.trim() ? "bg-white border-blue-400 text-blue-600 focus:border-blue-500" : "bg-white border-gray-200 text-gray-800 focus:border-blue-300")}/>
+        <button onClick={()=>{setActivePid(fPid.trim());setSalesVisible(true);}} disabled={!fPid.trim()||!!activePid} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] justify-self-start " + (activePid ? "text-blue-600 bg-blue-100 cursor-not-allowed" : !fPid.trim() ? "text-gray-400 bg-gray-100 cursor-not-allowed" : "text-white bg-blue-600 hover:bg-blue-700")}>Partner Sales</button>
+        {(()=>{const noFilters=!fDates.length&&!fProd.length&&!fType.length&&!fVenue.length&&!fCountry.length&&!fProvider.length&&!fName.trim()&&!fPid.trim()&&!activePid;return(<button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");setActivePid("");setSalesVisible(false);}} disabled={noFilters} className={"px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap h-[36px] justify-self-start "+(noFilters?"text-gray-400 bg-gray-100 cursor-not-allowed":"text-gray-600 bg-gray-100 hover:bg-gray-200")}>Reset All</button>);})()}
         {partnerSales && (<div className="lg:col-span-3 flex items-center gap-3 flex-wrap justify-end">
           {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (salesVisible && m.val > 0 ? "text-gray-900" : "text-gray-400")}>{salesVisible ? n(m.val) : n(0)}</span></span>))}
         </div>)}
@@ -365,15 +363,15 @@ const EventTable = ({ sortedGrouped, tableOvr, nameQ, currentMatchKey, focusPage
         {tableOvr&&<><span className="text-gray-300">·</span><span className="text-xs text-gray-400">Table Overall</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact YOY:</span><span className={"text-sm ml-1 "+tableOvr.yoy.color+" "+tableOvr.yoy.cls}>{tableOvr.yoy.text}</span><span className="text-gray-300">·</span><span className="text-xs font-bold text-gray-500 uppercase">Impact IMM:</span><span className={"text-sm ml-1 "+tableOvr.imm.color+" "+tableOvr.imm.cls}>{tableOvr.imm.text}</span></>}
       </div>
       <div className="flex items-center flex-shrink-0">
-        <button onClick={() => setPage(0)} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>First</button>
+        <button onClick={() => setPage(0)} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>First</button>
         <span className="text-gray-300 mx-1">·</span>
-        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Prev</button>
+        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0} className={"px-2 py-1 text-xs font-medium transition " + (safePage === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>Prev</button>
         <span className="text-gray-300 mx-1">·</span>
         <span className="px-2 py-1 text-xs font-medium text-gray-500">{safePage + 1} / {totalPages}</span>
         <span className="text-gray-300 mx-1">·</span>
-        <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Next</button>
+        <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className={"px-2 py-1 text-xs font-medium transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>Next</button>
         <span className="text-gray-300 mx-1">·</span>
-        <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"pl-2 py-1 text-xs font-medium rounded-md transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-100")}>Last</button>
+        <button onClick={() => setPage(totalPages - 1)} disabled={safePage >= totalPages - 1} className={"pl-2 py-1 text-xs font-medium transition " + (safePage >= totalPages - 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>Last</button>
       </div>
     </div></div>
     <div className="overflow-x-auto"><table className="w-full text-sm" style={{minWidth:"2000px"}}><thead><tr className="bg-gray-50 text-left">
