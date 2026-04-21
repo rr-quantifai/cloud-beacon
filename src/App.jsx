@@ -259,7 +259,7 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, nameMatches, nameCursor, onPrevMatch, onNextMatch, fPid, onPidChange, activePid, setActivePid, salesIndex, valueMode }) => {
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, nameMatches, nameCursor, onNextMatch, fPid, onPidChange, activePid, setActivePid, salesIndex, valueMode }) => {
   const [salesVisible, setSalesVisible] = useState(false);
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const partnerSales = useMemo(() => {
@@ -766,7 +766,7 @@ function App() {
 
         {tab==="analytics"&&(<div>
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
-          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} nameMatches={nameMatches} nameCursor={nameCursor} onPrevMatch={()=>setNameCursor(c=>(c-1+nameMatches.length)%nameMatches.length)} onNextMatch={()=>setNameCursor(c=>(c+1)%nameMatches.length)} fPid={fPid} onPidChange={setFPid} activePid={activePid} setActivePid={setActivePid} salesIndex={salesIndex} valueMode={valueMode}/>}
+          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} nameMatches={nameMatches} nameCursor={nameCursor} onNextMatch={()=>setNameCursor(c=>(c+1)%nameMatches.length)} fPid={fPid} onPidChange={setFPid} activePid={activePid} setActivePid={setActivePid} salesIndex={salesIndex} valueMode={valueMode}/>}
           {!hasEvt?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">Upload event and sales CSVs to get started</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} nameQ={debouncedName} currentMatchKey={currentMatchKey} focusPage={focusPage} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
         </div>)}
