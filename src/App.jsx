@@ -182,7 +182,7 @@ const MultiSel = ({ label, values, onChange, options, placeholder, disabled, dro
   );
 };
 
-const DateFilter = ({ tree, selected, onChange }) => {
+const DateFilter = ({ tree, selected, onChange, placeholder }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => { if (!open) return; const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
@@ -195,7 +195,7 @@ const DateFilter = ({ tree, selected, onChange }) => {
   const toggleMonth = (y, m) => { const mD = monthDates(y, m), next = new Set(selSet); if (allOf(mD)) mD.forEach(d => next.delete(d)); else mD.forEach(d => next.add(d)); onChange([...next]); };
   const toggleDate = (ds) => { const next = new Set(selSet); if (next.has(ds)) next.delete(ds); else next.add(ds); onChange([...next]); };
   const Chk = ({ checked, partial, onClick }) => (<div onClick={onClick} className={"w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 cursor-pointer transition " + (checked ? "border-blue-600" : partial ? "border-blue-400" : "border-gray-300 hover:border-gray-400")}>{checked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}{partial && !checked && <div className="w-2 h-0.5 bg-blue-400 rounded-sm"/>}</div>);
-  const displayText = selected.length === 0 ? "All" : selected.length === 1 ? fmtDate(selected[0], false) : "Multiple selections";
+  const displayText = selected.length === 0 ? (placeholder || "All") : selected.length === 1 ? fmtDate(selected[0], false) : "Multiple selections";
   return (
     <div ref={ref} className="relative">
       <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
@@ -260,21 +260,45 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-    <div className="flex items-center mb-3"><h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filters</h3><span className="mx-2 text-gray-300">·</span><button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Reset</button></div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3">
-      <div><label className="block text-xs font-medium text-gray-500 mb-1">Name</label><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Type to find..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
-      <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} />
-      <MultiSel label="Product" values={fProd} onChange={setFProd} options={fo.prods}/>
-      <MultiSel label="Type" values={fType} onChange={setFType} options={fo.types}/>
-      <MultiSel label="Venue" values={fVenue} onChange={setFVenue} options={fo.venues}/>
-      <MultiSel label="Country" values={fCountry} onChange={setFCountry} options={fo.countries}/>
-      <MultiSel label="Provider" values={fProvider} onChange={setFProvider} options={fo.providers}/>
-      <div><label className="block text-xs font-medium text-gray-500 mb-1">Partner ID</label><input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Type to filter..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, fPid, onPidChange, salesIndex, valueMode }) => {
+  const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
+  const partnerSales = useMemo(() => {
+    const ms = sortedMonths.slice(-3);
+    if (!ms.length) return null;
+    const pid = fPid.trim();
+    const useAll = !fProd.length;
+    const vMap = valueMode === "customers" ? salesIndex.custPM : salesIndex.byPM;
+    const vpMap = valueMode === "customers" ? salesIndex.custPPM : salesIndex.byPPM;
+    const months = ms.map(ym => {
+      const v = pid ? (useAll ? (vMap.get(pid + "|||" + ym) || 0) : fProd.reduce((s, p) => s + (vpMap.get(pid + "|||" + p + "|||" + ym) || 0), 0)) : 0;
+      return { ym, val: v };
+    });
+    return { months, total: _.sumBy(months, "val") };
+  }, [fPid, fProd, salesIndex, valueMode, sortedMonths]);
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <div><input type="text" value={fName} onChange={e=>onNameChange(e.target.value)} placeholder="Find by name..." className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fName.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/></div>
+        <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} placeholder="Filter by date..."/>
+        <MultiSel values={fProd} onChange={setFProd} options={fo.prods} placeholder="Filter by product..."/>
+        <MultiSel values={fType} onChange={setFType} options={fo.types} placeholder="Filter by type..."/>
+        <MultiSel values={fVenue} onChange={setFVenue} options={fo.venues} placeholder="Filter by venue..."/>
+        <MultiSel values={fCountry} onChange={setFCountry} options={fo.countries} placeholder="Filter by country..."/>
+        <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider..."/>
+      </div>
+      <div className="border-t border-gray-100 mt-3 pt-3 flex items-center gap-3">
+        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Filter by ID..." className={"px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] placeholder-gray-400 focus:outline-none truncate w-40 flex-shrink-0 " + (fPid.trim() ? "border-blue-400 text-blue-600 focus:border-blue-500" : "border-gray-200 text-gray-800 focus:border-blue-300")}/>
+        {partnerSales && (<div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+          {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (fPid.trim() && m.val > 0 ? "text-gray-900" : "text-gray-400")}>{n(m.val)}</span></span>))}
+          <span className="text-gray-300">·</span>
+          <span className="text-xs font-bold text-gray-500 uppercase">Total:</span>
+          <span className={"text-sm font-bold ml-1 " + (fPid.trim() && partnerSales.total > 0 ? "text-blue-600" : "text-gray-400")}>{n(partnerSales.total)}</span>
+        </div>)}
+        <button onClick={()=>{setFDates([]);setFProd([]);setFType([]);setFVenue([]);setFCountry([]);setFProvider([]);onNameChange("");onPidChange("");}} className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap ml-auto flex-shrink-0">Reset All</button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
   const [lb1Page, setLb1Page] = useState(0);
@@ -727,7 +751,7 @@ function App() {
 
         {tab==="analytics"&&(<div>
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
-          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} fPid={fPid} onPidChange={setFPid}/>}
+          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} fPid={fPid} onPidChange={setFPid} salesIndex={salesIndex} valueMode={valueMode}/>}
           {allGrouped.length===0?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">{hasEvt?"No events match filters.":"Upload event and sales CSVs to get started"}</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} fName={fName}sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
         </div>)}
