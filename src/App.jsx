@@ -259,7 +259,7 @@ const DataCoverage = ({ coverageData, flashKeys }) => {
   );
 };
 
-const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, nameMatches, nameCursor, onNextMatch, fPid, onPidChange, salesIndex, valueMode }) => {
+const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fVenue, setFVenue, fCountry, setFCountry, fProvider, setFProvider, fName, onNameChange, nameMatches, nameCursor, onNextMatch, fPid, onPidChange, pidValid, salesIndex, valueMode }) => {
   const sortedMonths = useMemo(() => [...salesIndex.months].sort(), [salesIndex]);
   const partnerSales = useMemo(() => {
     const ms = sortedMonths.slice(-3);
@@ -297,7 +297,10 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
       </div>
       <div className="border-t border-gray-100 mt-3 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 items-center">
         <MultiSel values={fProvider} onChange={setFProvider} options={fo.providers} placeholder="Filter by provider"/>
-        <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Filter by ID" className={"w-full px-2.5 py-1.5 text-sm border rounded-lg h-[36px] placeholder-gray-400 focus:outline-none truncate " + (fPid.trim() ? "bg-white border-blue-400 text-blue-600 focus:border-blue-500" : "bg-white border-gray-200 text-gray-800 focus:border-blue-300")}/>
+        <div className={"w-full flex items-center border rounded-lg bg-white h-[36px] " + (fPid.trim() ? "border-blue-400" : "border-gray-200")}>
+          <input type="text" value={fPid} onChange={e=>onPidChange(e.target.value)} placeholder="Filter by ID" className={"flex-1 min-w-0 px-2.5 py-1.5 text-sm bg-transparent placeholder-gray-400 focus:outline-none truncate " + (fPid.trim() ? "text-blue-600" : "text-gray-800")}/>
+          {fPid.trim() && (pidValid ? <svg className="flex-shrink-0 mr-2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg> : <svg className="flex-shrink-0 mr-2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>)}
+        </div>
         {partnerSales && (<div className="lg:col-span-5 flex items-center gap-3 flex-wrap justify-end">
           {partnerSales.months.map((m, i) => (<span key={m.ym} className="flex items-center">{i > 0 && <span className="text-gray-300 mr-3">·</span>}<span className="text-xs text-gray-500">{fmtYM(m.ym)}:</span><span className={"text-sm font-semibold ml-1.5 " + (fPid.trim() && m.val > 0 ? "text-gray-900" : "text-gray-400")}>{fPid.trim() ? n(m.val) : n(0)}</span></span>))}
           <span className="text-gray-300">·</span>
@@ -679,7 +682,7 @@ function App() {
       if (pDate && pProd && pType && pVenue && pCountry && pPid && g.provider) providers.add(g.provider);
     }
     const dateTree = Object.keys(dateMap).sort().map(y => ({ year: y, months: Object.keys(dateMap[y]).sort((a,b) => +a - +b).map(m => ({ month: +m, days: [...dateMap[y][m]].sort((a,b) => a-b) })) }));
-    return { dateTree, prods: [...prods].sort(), types: [...types].sort(), venues: [...venues].sort(), countries: [...countries].sort(), providers: [...providers].sort() };
+    return { dateTree, prods: [...prods].sort(), types: [...types].sort(), venues: [...venues].sort(), countries: [...countries].sort(), providers: [...providers].sort(), pidValid: pidHasResults };
   }, [allEventsGrouped, fDates, fProd, fType, fVenue, fCountry, fProvider, fPid]);
 
   const toggleSort = (col) => { if (sortCol===col) { if (sortDir==="desc") setSortDir("asc"); else { setSortCol(null); setSortDir("desc"); } } else { setSortCol(col); setSortDir("desc"); } };
@@ -765,7 +768,7 @@ function App() {
 
         {tab==="analytics"&&(<div>
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
-          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} nameMatches={nameMatches} nameCursor={nameCursor} onNextMatch={()=>setNameCursor(c=>(c+1)%nameMatches.length)} fPid={fPid} onPidChange={setFPid} salesIndex={salesIndex} valueMode={valueMode}/>}
+          {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} nameMatches={nameMatches} nameCursor={nameCursor} onNextMatch={()=>setNameCursor(c=>(c+1)%nameMatches.length)} fPid={fPid} onPidChange={setFPid} pidValid={fo.pidValid} salesIndex={salesIndex} valueMode={valueMode}/>}
           {!hasEvt?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">Upload event and sales CSVs to get started</p></div>)
           :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} nameQ={debouncedName} currentMatchKey={currentMatchKey} focusPage={focusPage} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
         </div>)}
