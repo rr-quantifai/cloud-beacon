@@ -159,20 +159,19 @@ const TabSwitch = ({ items, active, onChange, disabledKeys }) => (<div className
 /* ═══════════════════════════════════════════════════════════════════
    FILTER COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
-const MultiSel = ({ label, values, onChange, options, placeholder, disabled, dropUp }) => {
+const MultiSel = ({ values, onChange, options, placeholder }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => { if (!open) return; const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
   const toggle = (v) => onChange(values.includes(v) ? values.filter(x => x !== v) : [...values, v]);
   const getLabel = (v) => { const o = options.find(x => (typeof x === "object" ? x.value : "" + x) === v); return typeof o === "object" ? o.label : o != null ? "" + o : v; };
-  const dis = disabled || options.length === 0;
+  const dis = options.length === 0;
   return (
     <div ref={ref} className="relative">
-      {label && <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>}
       <div onClick={() => !dis && setOpen(!open)} className={"w-full px-2.5 py-1.5 text-sm border rounded-lg bg-white h-[36px] flex items-center " + (dis ? "opacity-50 cursor-not-allowed border-gray-200" : values.length > 0 ? "cursor-pointer border-blue-400 hover:border-blue-500" : "cursor-pointer border-gray-200 hover:border-blue-300")}>
         <span className={(values.length > 0 ? "text-blue-600" : "text-gray-400") + " truncate"}>{values.length === 0 ? (placeholder || "All") : values.length === 1 ? getLabel(values[0]) : "Multiple selections"}</span>
       </div>
-      {open && !dis && (<div className={"absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 " + (dropUp ? "bottom-full mb-1" : "mt-1")}>
+      {open && !dis && (<div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 mt-1">
         {options.map(o => { const v = typeof o === "object" ? o.value : "" + o, l = typeof o === "object" ? o.label : "" + o, chk = values.includes(v);
           return (<div key={v} onClick={() => toggle(v)} className="text-xs cursor-pointer flex items-center gap-2 hover:bg-gray-50" style={{ padding: "12px" }}>
             <div className={"w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 " + (chk ? "border-blue-600" : "border-gray-300")}>{chk && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}</div>
@@ -286,7 +285,7 @@ const FilterBar = ({ fo, fDates, setFDates, fProd, setFProd, fType, setFType, fV
               <button onClick={onNextMatch} disabled={!nameMatches.length} className={"text-xs font-medium transition " + (!nameMatches.length ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>Next</button>
             </div>
           </div>
-        </div></div>
+        </div>
         <DateFilter tree={fo.dateTree} selected={fDates} onChange={setFDates} placeholder="Filter by date"/>
         <MultiSel values={fProd} onChange={setFProd} options={fo.prods} placeholder="Filter by product"/>
         <MultiSel values={fType} onChange={setFType} options={fo.types} placeholder="Filter by type"/>
@@ -351,7 +350,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
 
 const PAGE_SIZE = 5;
 
-const EventTable = ({ sortedGrouped, tableOvr, nameQ, currentMatchKey, focusPage, sortCol, sortDir, toggleSort, openModal }) => {
+const EventTable = ({ sortedGrouped, tableOvr, nameQ, currentMatchKey, focusPage, sortCol, toggleSort, openModal }) => {
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(sortedGrouped.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -769,7 +768,7 @@ function App() {
           {hasEvt&&hasSales&&summaryData&&<SummaryCards summaryData={summaryData} topPartnersData={topPartnersData} globalNameMap={globalNameMap}/>}
           {hasEvt&&<FilterBar fo={fo} fDates={fDates} setFDates={setFDates} fProd={fProd} setFProd={setFProd} fType={fType} setFType={setFType} fVenue={fVenue} setFVenue={setFVenue} fCountry={fCountry} setFCountry={setFCountry} fProvider={fProvider} setFProvider={setFProvider} fName={fName} onNameChange={handleNameChange} nameMatches={nameMatches} nameCursor={nameCursor} onNextMatch={()=>setNameCursor(c=>(c+1)%nameMatches.length)} fPid={fPid} onPidChange={setFPid} pidValid={fo.pidValid} salesIndex={salesIndex} valueMode={valueMode}/>}
           {!hasEvt?(<div className="bg-white rounded-xl border border-gray-200 p-8 text-center flex flex-col items-center justify-center" style={{height:"262px"}}><div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><p className="text-sm text-gray-500">Upload event and sales CSVs to get started</p></div>)
-          :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} nameQ={debouncedName} currentMatchKey={currentMatchKey} focusPage={focusPage} sortCol={sortCol} sortDir={sortDir} toggleSort={toggleSort} openModal={openModal}/>}
+          :<EventTable sortedGrouped={sortedGrouped} tableOvr={tableOvr} nameQ={debouncedName} currentMatchKey={currentMatchKey} focusPage={focusPage} sortCol={sortCol} toggleSort={toggleSort} openModal={openModal}/>}
         </div>)}
       </div>
 
