@@ -566,7 +566,11 @@ function App() {
   const [sortCol,setSortCol]=useState(null); const [sortDir,setSortDir]=useState("desc"); const [nameCursor,setNameCursor]=useState(0);
   const [modal, setModal] = useState(null);
   const [mode, setModeRaw] = useState("test");
-  const setMode = (m) => { setModeRaw(m); setTab("analytics"); };
+  const setMode = (m) => { setModeRaw(m); psSet("app_mode", m); setTab("analytics"); };
+  useEffect(() => {
+    psGet("app_mode").then(m => { if (m === "live") setModeRaw("live") })
+  }, [])
+
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= MIN_DESKTOP);
 
   useEffect(() => { const h = () => setIsDesktop(window.innerWidth >= MIN_DESKTOP); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
