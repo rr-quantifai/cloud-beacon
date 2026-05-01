@@ -1,8 +1,8 @@
 Event Date,Event Name,Event Type,Event Venue,Product,Country,Provider,Partner ID,Partner Name,Attendee Name,Attendance
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P001,Alpha Corporation,John Smith,Yes
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P001,Alpha Corporation,Jane Doe,Yes
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P002,Beta Incorporated,Bob Wilson,Yes
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P003,Gamma LLC,Charlie Brown,Yes
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P004,Delta Company,Dave Miller,No
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P005,Epsilon Limited,Eve Johnson,Yes
-2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Self,P006,Zeta Corporation,Frank Davis,No
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P001,Alpha Corporation,John Smith,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P001,Alpha Corporation,Jane Doe,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P002,Beta Incorporated,Bob Wilson,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P003,Gamma LLC,Charlie Brown,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P004,Delta Company,Dave Miller,No
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P005,Epsilon Limited,Eve Johnson,Yes
+2024-05-15,Cloud Innovation Summit,Offline,Physical Location,Cloud,UAE,Redington,P006,Zeta Corporation,Frank Davis,No
