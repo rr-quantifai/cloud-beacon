@@ -51,14 +51,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SALE_VALUE_RE = /^\d+(\.\d+)?$/;
 const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; if (!SALE_VALUE_RE.test(r["Sale Value"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
 const makeDateStr = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-const TEST_EVT = ["events_2024_05.csv","events_2024_12.csv","events_2025_01.csv","events_2025_02.csv","events_2025_03.csv","events_2025_04.csv"];
-const TEST_SAL = ["sales_2023_07.csv","sales_2023_08.csv","sales_2023_09.csv","sales_2023_10.csv","sales_2023_11.csv","sales_2023_12.csv","sales_2024_01.csv","sales_2024_02.csv","sales_2024_03.csv","sales_2024_04.csv","sales_2024_05.csv","sales_2024_06.csv","sales_2024_07.csv","sales_2024_08.csv","sales_2024_09.csv","sales_2024_10.csv","sales_2024_11.csv","sales_2024_12.csv","sales_2025_01.csv","sales_2025_02.csv","sales_2025_03.csv","sales_2025_04.csv","sales_2025_05.csv","sales_2025_06.csv","sales_2025_07.csv"];
 const MIN_DESKTOP = 1024;
-const loadTestData = async () => {
-  const load = async (name, dateCol) => { const r = await fetch("/test-data/" + name); const text = await r.text(); const rows = await parseCsv(text); const d = parseD(rows[0]?.[dateCol]); if (!d) return []; const mo = "" + (d.getUTCMonth() + 1), yr = "" + d.getUTCFullYear(); return rows.map(row => ({ ...row, _uMonth: mo, _uYear: yr })); };
-  const [evts, sals] = await Promise.all([Promise.all(TEST_EVT.map(f => load(f, "Event Date"))), Promise.all(TEST_SAL.map(f => load(f, "Sale Date")))]);
-  return { events: evts.flat(), sales: sals.flat() };
-};
 
 /* ═══════════════════════════════════════════════════════════════════
    DATA HELPERS
@@ -565,32 +558,28 @@ function App() {
   const handleNameChange = useCallback((val) => { setFName(val); if (nameTimer.current) clearTimeout(nameTimer.current); nameTimer.current = setTimeout(() => setDebouncedName(val), 300); }, []);
   const [sortCol,setSortCol]=useState(null); const [sortDir,setSortDir]=useState("desc"); const [nameCursor,setNameCursor]=useState(0);
   const [modal, setModal] = useState(null);
-  const [mode, setModeRaw] = useState("test");
-  const setMode = (m) => { setModeRaw(m); psSet("app_mode", m); setTab("analytics"); };
-  useEffect(() => {
-    psGet("app_mode").then(m => { if (m === "live") setModeRaw("live") })
-  }, [])
 
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= MIN_DESKTOP);
 
   useEffect(() => { const h = () => setIsDesktop(window.innerWidth >= MIN_DESKTOP); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
 
   useEffect(() => { setDataLoaded(false); (async () => { try {
-    if (mode === "test") { const td = await loadTestData(); setEvents(td.events); setSales(td.sales); }
-    else { const eidx = await psGet("evt_idx") || []; const eC = await Promise.all(eidx.map(k => psGet("evt:" + k))); const e = eC.flat().filter(Boolean); const sidx = await psGet("sal_idx") || []; const sC = await Promise.all(sidx.map(k => psGet("sal:" + k))); const s = sC.flat().filter(Boolean); setEvents(e); setSales(s); }
-  } catch { setEvents([]); setSales([]); } setDataLoaded(true); })(); }, [mode]);
+  const eidx = await psGet("evt_idx") || []; const eC = await Promise.all(eidx.map(k => psGet("evt:" + k))); const e = eC.flat().filter(Boolean);
+  const sidx = await psGet("sal_idx") || []; const sC = await Promise.all(sidx.map(k => psGet("sal:" + k))); const s = sC.flat().filter(Boolean);
+  setEvents(e); setSales(s);
+} catch { setEvents([]); setSales([]); } setDataLoaded(true); })(); }, []);
 
-  useEffect(() => { if (!dataLoaded || !events.length || mode !== "live") return; const t = setTimeout(async () => {
+  useEffect(() => { if (!dataLoaded || !events.length) return; const t = setTimeout(async () => {
     const bm = _.groupBy(events, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("evt_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("evt:" + k); }
     for (const k of ks) await psSet("evt:" + k, bm[k]); await psSet("evt_idx", ks);
-  }, 300); return () => clearTimeout(t); }, [events, dataLoaded, mode]);
+  }, 300); return () => clearTimeout(t); }, [events, dataLoaded]);
 
-  useEffect(() => { if (!dataLoaded || !sales.length || mode !== "live") return; const t = setTimeout(async () => {
+  useEffect(() => { if (!dataLoaded || !sales.length) return; const t = setTimeout(async () => {
     const bm = _.groupBy(sales, r => r._uYear + ":" + r._uMonth); const ks = Object.keys(bm);
     const ok = await psGet("sal_idx") || []; for (const k of ok) { if (!ks.includes(k)) await psDel("sal:" + k); }
     for (const k of ks) await psSet("sal:" + k, bm[k]); await psSet("sal_idx", ks);
-  }, 300); return () => clearTimeout(t); }, [sales, dataLoaded, mode]);
+  }, 300); return () => clearTimeout(t); }, [sales, dataLoaded]);
 
   useEffect(() => { if (uploadState?.status==="success"||uploadState?.status==="partial"||uploadState?.status==="error") { const handler = () => { setUploadState(null); setFlashKeys([]); }; const t = setTimeout(() => window.addEventListener("click", handler, { once: true }), 300); return () => { clearTimeout(t); window.removeEventListener("click", handler); }; } }, [uploadState]);
 
@@ -750,12 +739,12 @@ function App() {
     <div className="min-h-screen bg-gray-50" style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div className="bg-white border-b border-gray-200"><div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center flex-shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h1 className="text-lg font-bold text-gray-900 leading-tight tracking-tight">Cloud Beacon</h1><p className="text-xs text-gray-400">Event impact analyzer</p></div></div>
-        <div className="flex items-center gap-3"><span className="flex items-center text-xs whitespace-nowrap"><span className="text-gray-500">Event CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.evt}</span><span className="text-gray-300 mx-3">·</span><span className="text-gray-500">Sales CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.sal}</span></span><div className="w-px h-5 bg-gray-200"/><button onClick={clearAll} disabled={mode==="test"||(!events.length&&!sales.length)} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(mode==="test"||(!events.length&&!sales.length)?"text-gray-300 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button><div className="flex bg-gray-100 rounded-lg p-0.5 h-[32px]"><button onClick={()=>setMode("test")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="test"?"bg-white text-red-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Test</button><button onClick={()=>setMode("live")} className={"px-3 flex items-center text-xs font-medium rounded-md transition whitespace-nowrap "+(mode==="live"?"bg-white text-emerald-600 shadow-sm":"text-gray-500 hover:text-gray-700")}>Live</button></div></div>
+        <div className="flex items-center gap-3"><span className="flex items-center text-xs whitespace-nowrap"><span className="text-gray-500">Event CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.evt}</span><span className="text-gray-300 mx-3">·</span><span className="text-gray-500">Sales CSVs:</span><span className="font-semibold text-gray-900 ml-1.5">{reportCounts.sal}</span></span><div className="w-px h-5 bg-gray-200"/><button onClick={clearAll} disabled={!events.length&&!sales.length} className={"px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap h-[32px] "+(!events.length&&!sales.length?"text-gray-300 bg-gray-100 cursor-not-allowed":"text-red-600 bg-red-50 hover:bg-red-100")}>Clear All Data</button></div>
       </div></div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex items-center justify-between mb-6">
-          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} disabledKeys={mode==="test"?["upload"]:undefined} />
+          <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} />
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
             <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
             <TabSwitch items={[["product","Product Sales"],["total","Total Sales"]]} active={analysisMode} onChange={setAnalysisMode} />
