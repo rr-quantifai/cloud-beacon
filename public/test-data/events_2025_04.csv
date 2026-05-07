@@ -1,3 +1,8 @@
 Event Date,Event Name,Event Type,Event Venue,Product,Country,Provider,Partner ID,Partner Name,Attendee Name,Attendance
-2025-04-08,AI Partners Day,Offline,Cloud Champion,AI,KSA,Sponsorship,P005,Epsilon Limited,Orion Digital,Yes
-2025-04-08,AI Partners Day,Offline,Cloud Champion,AI,KSA,Sponsorship,P010,Kappa Digital,Cloud Nine FZE LLC,No
+2025-04-08,ABC 123,Online,Cloud Champion,AI,Bahrain,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Microsoft Teams,BizApps,Jordan,Redington,A123,ABC 123 LLC,John Doe,No
+2025-04-08,ABC 123,Offline,Physical Location,Cloud,KSA,Sponsorship,A123,ABC 123 LLC,DEF 123 LTD,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,Modern Work,Kuwait,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,Security,Oman,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,Qatar,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,UAE,Microsoft,A123,ABC 123 LLC,John Doe,Yes
