@@ -32,7 +32,7 @@ const isYes = (v) => (v || "").trim().toLowerCase() === "yes";
 const mkKey = (y, m) => String(y) + "-" + String(m).padStart(2, "0");
 const offsetMonth = (ym, n) => { const [y, m] = ym.split("-").map(Number); const t = y * 12 + (m - 1) + n; return mkKey(Math.floor(t / 12), (t % 12) + 1); };
 const getEventMonth = (ds) => { const d = parseD(ds); return d ? mkKey(d.getUTCFullYear(), d.getUTCMonth() + 1) : null; };
-const getFwdMonths = (eYM, n) => Array.from({ length: n }, (_, i) => offsetMonth(eYM, i + 1));
+const getFwdMonths = (eYM, n, lag) => Array.from({ length: n }, (_, i) => offsetMonth(eYM, lag + i));
 const getYoYMonths = (fwd) => fwd.map(ym => offsetMonth(ym, -12));
 const getIMMMonths = (eYM, n) => Array.from({ length: n }, (_, i) => offsetMonth(eYM, -(n - i)));
 
@@ -84,10 +84,10 @@ const makeNull = () => ({ ratioYoY: null, ratioIMM: null, histYoY: 0, fwdYoY: 0,
 
 const idxGet = (idx, mode, vm, pid, prod, ym) => { const k = mode === "total" ? pid + "|||" + ym : pid + "|||" + prod + "|||" + ym; return (vm === "customers" ? (mode === "total" ? idx.custPM.get(k) : idx.custPPM.get(k)) : (mode === "total" ? idx.byPM.get(k) : idx.byPPM.get(k))) || 0; };
 
-const calcEventImpact = (group, idx, mode, fwdN, vm) => {
+const calcEventImpact = (group, idx, mode, fwdN, lag, vm) => {
   const eYM = getEventMonth(group.eventDate);
   if (!eYM) return makeNull();
-  const fwd = getFwdMonths(eYM, fwdN), yoy = getYoYMonths(fwd), imm = getIMMMonths(eYM, fwdN);
+  const fwd = getFwdMonths(eYM, fwdN, lag), yoy = getYoYMonths(fwd), imm = getIMMMonths(eYM, fwdN);
   const fwdAvail = fwd.every(ym => idx.months.has(ym));
   if (!fwdAvail) return { ...makeNull(), fwdRange: fwd, yoyRange: yoy, immRange: imm };
   const yoyAvail = yoy.every(ym => idx.months.has(ym));
@@ -106,10 +106,10 @@ const calcEventImpact = (group, idx, mode, fwdN, vm) => {
   return { ratioYoY: hY > 0 ? fY / hY : (fY > 0 ? Infinity : null), ratioIMM: hI > 0 ? fI / hI : (fI > 0 ? Infinity : null), histYoY: hY, fwdYoY: fY, histIMM: hI, fwdIMM: fI, impactPartners: partners, eventStatus: "ok", fwdRange: fwd, yoyRange: yoy, immRange: imm, fwdAvail: true, yoyAvail, immAvail };
 };
 
-const calcBaselines = (group, idx, mode, fwdN, vm) => {
+const calcBaselines = (group, idx, mode, fwdN, lag, vm) => {
   const eYM = getEventMonth(group.eventDate);
   if (!eYM) return { yoy: null, imm: null };
-  const fwd = getFwdMonths(eYM, fwdN);
+  const fwd = getFwdMonths(eYM, fwdN, lag);
   if (!fwd.every(ym => idx.months.has(ym))) return { yoy: null, imm: null };
   const yoy = getYoYMonths(fwd), imm = getIMMMonths(eYM, fwdN);
   const yoyAvail = yoy.every(ym => idx.months.has(ym)), immAvail = imm.every(ym => idx.months.has(ym));
@@ -148,6 +148,29 @@ const formatImpact = (ratio, csvOk) => {
 const Dots = () => (<span className="inline-flex items-center gap-1">{[0,1,2].map(i=><span key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300" style={{animation:"dotPulse 1.2s infinite",animationDelay:i*0.2+"s"}}/>)}<style>{`@keyframes dotPulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style></span>);
 const Badge = ({ text, className }) => <span className={"inline-block px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap " + className}>{text}</span>;
 const TabSwitch = ({ items, active, onChange, disabledKeys }) => (<div className="flex gap-1 bg-gray-100 rounded-lg p-1">{items.map(([k, l]) => { const dis = disabledKeys?.includes(k); return <button key={k} onClick={() => !dis && onChange(k)} className={"px-4 py-2 text-sm font-medium rounded-md transition whitespace-nowrap " + (active === k ? "bg-white text-gray-900 shadow-sm" : dis ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700")}>{l}</button>; })}</div>);
+const MonthLagSwitch = ({ fwdMonths, lag, onMonthChange, onLagChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => { if (!open) return; const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
+  const caretLeft = ["16.67%", "50%", "83.33%"][[1, 2, 3].indexOf(fwdMonths)];
+  return (
+    <div ref={ref} className="relative flex gap-1 bg-gray-100 rounded-lg p-1">
+      {[1, 2, 3].map(m => (
+        <button key={m} onClick={() => { onMonthChange(m); setOpen(fwdMonths === m ? !open : true); }} className={"px-4 py-2 text-sm font-medium rounded-md transition whitespace-nowrap " + (fwdMonths === m ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}>{m}M</button>
+      ))}
+      {open && (
+        <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-200 rounded-lg p-1 z-50 shadow-sm">
+          <div className="absolute -top-1.5 w-2.5 h-2.5 bg-white border-l border-t border-gray-200" style={{ left: caretLeft, transform: "translateX(-50%) rotate(45deg)" }} />
+          <div className="flex gap-1">
+            {[1, 2, 3].map(l => (
+              <button key={l} onClick={() => { onLagChange(l); setOpen(false); }} className={"flex-1 py-2 text-sm font-medium rounded-md transition " + (lag === l ? "bg-gray-100 text-blue-600" : "text-gray-500 hover:text-gray-700")}>+{l}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    FILTER COMPONENTS
@@ -550,6 +573,7 @@ function App() {
   const [analysisMode, setAnalysisMode] = useState("product");
   const [valueMode, setValueMode] = useState("value");
   const [fwdMonths, setFwdMonths] = useState(1);
+  const [lag, setLag] = useState(1);
   const [fDates, setFDates] = useState([]); const [fProd,setFProd]=useState([]); const [fType,setFType]=useState([]);
   const [fVenue,setFVenue]=useState([]); const [fCountry,setFCountry]=useState([]); const [fProvider,setFProvider]=useState([]); const [fPid,setFPid]=useState("");
   const [fName, setFName] = useState("");
@@ -633,12 +657,12 @@ function App() {
   const impactCache = useMemo(() => {
     const cache = new Map();
     for (const g of allEventsGrouped) {
-      const imp = calcEventImpact(g, salesIndex, analysisMode, fwdMonths, valueMode);
-      const bl = imp.eventStatus === "ok" ? calcBaselines(g, salesIndex, analysisMode, fwdMonths, valueMode) : { yoy: null, imm: null };
+      const imp = calcEventImpact(g, salesIndex, analysisMode, fwdMonths, lag, valueMode);
+      const bl = imp.eventStatus === "ok" ? calcBaselines(g, salesIndex, analysisMode, fwdMonths, lag, valueMode) : { yoy: null, imm: null };
       cache.set(g.key, { ...g, ...imp, baselineYoY: bl.yoy, baselineIMM: bl.imm });
     }
     return cache;
-  }, [allEventsGrouped, salesIndex, analysisMode, fwdMonths, valueMode]);
+  }, [allEventsGrouped, salesIndex, analysisMode, fwdMonths, lag, valueMode]);
 
   const allGrouped = useMemo(() => {
     let groups = [...impactCache.values()];
@@ -746,7 +770,7 @@ function App() {
         <div className="flex items-center justify-between mb-6">
           <TabSwitch items={[["analytics","Analytics"],["upload","Data Upload"]]} active={tab} onChange={setTab} />
           {tab==="analytics"&&hasEvt&&hasSales&&<div className="flex items-center gap-3">
-            <TabSwitch items={[["1","1M"],["2","2M"],["3","3M"]]} active={""+fwdMonths} onChange={v=>setFwdMonths(+v)} />
+            <MonthLagSwitch fwdMonths={fwdMonths} lag={lag} onMonthChange={setFwdMonths} onLagChange={setLag} />
             <TabSwitch items={[["product","Product Sales"],["total","Total Sales"]]} active={analysisMode} onChange={setAnalysisMode} />
             <TabSwitch items={[["value","Value"],["customers","Customers"]]} active={valueMode} onChange={setValueMode} />
           </div>}
