@@ -44,7 +44,7 @@ const PROD_COLORS = { AI: "#8b5cf6", BizApps: "#059669", Cloud: "#3b82f6", "Mode
 const PROD_BADGE = { AI: "bg-purple-100 text-purple-700", BizApps: "bg-emerald-100 text-emerald-700", Cloud: "bg-blue-100 text-blue-700", "Modern Work": "bg-pink-100 text-pink-700", Security: "bg-amber-100 text-amber-700" };
 const EVENT_HEADERS = ["Event Date","Event Name","Event Type","Event Venue","Product","Country","Provider","Partner ID","Partner Name","Attendee Name","Attendance"];
 const SALES_HEADERS = ["Sale Date","Sale Value","Product","Partner ID","Customer Name"];
-const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (h.length === EVENT_HEADERS.length && EVENT_HEADERS.every(e => h.includes(e.toLowerCase()))) return "event"; if (h.length === SALES_HEADERS.length && SALES_HEADERS.every(e => h.includes(e.toLowerCase()))) return "sales"; return null; };
+const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (h.length === EVENT_HEADERS.length && EVENT_HEADERS.every((e, i) => h[i].toLowerCase() === e.toLowerCase())) return "event"; if (h.length === SALES_HEADERS.length && SALES_HEADERS.every((e, i) => h[i].toLowerCase() === e.toLowerCase())) return "sales"; return null; };
 const VALID_PRODUCTS = new Set(["AI", "BizApps", "Cloud", "Modern Work", "Security"]);
 const VALID_EVENT_TYPES = new Set(["Online", "Offline"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -240,19 +240,18 @@ const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !p
 
 const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
   const st = uploadState?.status;
-  const bc = st==="error"?"border-red-200":st==="partial"?"border-amber-200":st==="success"?"border-emerald-200":"border-blue-300";
-  const bg = st==="error"?"bg-red-50 hover:bg-red-100":st==="partial"?"bg-amber-50 hover:bg-amber-100":st==="success"?"bg-emerald-50 hover:bg-emerald-100":"bg-blue-50 hover:bg-blue-100";
+  const bc = st==="error"?"border-red-200":st==="success"?"border-emerald-200":"border-blue-300";
+  const bg = st==="error"?"bg-red-50 hover:bg-red-100":st==="success"?"bg-emerald-50 hover:bg-emerald-100":"bg-blue-50 hover:bg-blue-100";
   const bs = st==="uploading"||!st?"border-dashed":"";
   return (
     <div className="bg-white rounded-xl border border-gray-200 pt-4 px-4 pb-0 flex flex-col" style={{height:"262px"}}>
-      <div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><div><div className="flex items-center"><h2 className="text-sm font-semibold text-gray-900">Data Upload</h2><span className="mx-2 text-gray-300">·</span><a href="/test-data/events_2025_04.csv" download className="text-xs text-indigo-500 hover:text-indigo-700 font-medium">Event CSV Format</a><span className="mx-2 text-gray-300">·</span><a href="/test-data/sales_2025_07.csv" download className="text-xs text-violet-500 hover:text-violet-700 font-medium">Sales CSV Format</a></div><p className="text-xs text-gray-400">Upload CSVs — file type is auto-detected</p></div></div>
+      <div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div><div><div className="flex items-center"><h2 className="text-sm font-semibold text-gray-900">Data Upload</h2><span className="mx-2 text-gray-300">·</span><a href="/test-data/events_2025_04.csv" download className="text-xs text-indigo-500 hover:text-indigo-700 font-medium">Event CSV Format</a><span className="mx-2 text-gray-300">·</span><a href="/test-data/sales_2025_07.csv" download className="text-xs text-violet-500 hover:text-violet-700 font-medium">Sales CSV Format</a></div><p className="text-xs text-gray-400">Upload a CSV — file type is auto-detected</p></div></div>
       <label className={"flex flex-col items-center justify-center w-full flex-1 border-2 rounded-xl cursor-pointer transition mb-4 "+bc+" "+bg+" "+bs}>
-        {st==="uploading"?<><p className="text-xs font-medium text-gray-600 mb-3">Processing{uploadState.total>1?" ("+uploadState.current+"/"+uploadState.total+")":""}...</p><div className="w-48 h-1.5 bg-blue-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{width:uploadState.progress+"%"}}/></div></>
+        {st==="uploading"?<><p className="text-xs font-medium text-gray-600 mb-3">Processing...</p><div className="w-48 h-1.5 bg-blue-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{width:uploadState.progress+"%"}}/></div></>
         :st==="error"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg></div><span className="text-xs font-semibold text-red-700">{uploadState.message}</span></div>
-        :st==="partial"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center"><span style={{color:"#d97706",fontSize:"14px",fontWeight:"bold",lineHeight:"1"}}>!</span></div><span className="text-xs font-semibold text-amber-700">{uploadState.message}</span></div>
         :st==="success"?<div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg></div><span className="text-xs font-semibold text-emerald-700">{uploadState.message}</span></div>
-        :<><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span className="text-xs text-gray-500 mt-2">Click to upload CSVs</span></>}
-        {st!=="uploading"&&<input ref={fileRef} type="file" accept=".csv" multiple className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
+        :<><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span className="text-xs text-gray-500 mt-2">Click to upload a CSV</span></>}
+        {st!=="uploading"&&<input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e=>{handleUpload(e.target.files);if(fileRef.current)fileRef.current.value="";}}/>}
       </label>
     </div>
   );
@@ -605,7 +604,7 @@ function App() {
     for (const k of ks) await psSet("sal:" + k, bm[k]); await psSet("sal_idx", ks);
   }, 300); return () => clearTimeout(t); }, [sales, dataLoaded]);
 
-  useEffect(() => { if (uploadState?.status==="success"||uploadState?.status==="partial"||uploadState?.status==="error") { const handler = () => { setUploadState(null); setFlashKeys([]); }; const t = setTimeout(() => window.addEventListener("click", handler, { once: true }), 300); return () => { clearTimeout(t); window.removeEventListener("click", handler); }; } }, [uploadState]);
+  useEffect(() => { if (uploadState?.status==="success"||uploadState?.status==="error") { const handler = () => { setUploadState(null); setFlashKeys([]); }; const t = setTimeout(() => window.addEventListener("click", handler, { once: true }), 300); return () => { clearTimeout(t); window.removeEventListener("click", handler); }; } }, [uploadState]);
 
   const salesIndex = useMemo(() => {
     const byPM = new Map(), byPPM = new Map(), custPM = new Map(), custPPM = new Map();
@@ -638,18 +637,43 @@ function App() {
   }, [events, sales]);
 
   const handleUpload = useCallback(async (files) => {
-    if (!files||!files.length) return; const list = Array.from(files), total = list.length;
-    const evtB = [], salB = []; let fail = 0; const fk = [];
-    for (let i = 0; i < list.length; i++) { setUploadState({status:"uploading",progress:Math.round((i/total)*100),current:i+1,total}); try { await new Promise(r=>setTimeout(r,50)); const rows = await parseCsv(list[i]); const type = detectType(rows); if (!type) { fail++; continue; } if (!validateRows(rows, type)) { fail++; continue; } const dateCol = type==="event"?"Event Date":"Sale Date"; const fd = parseD(rows[0]?.[dateCol]); if (!fd) { fail++; continue; } const mo = ""+(fd.getUTCMonth()+1), yr = ""+fd.getUTCFullYear(); if (rows.some(r => { const d=parseD(r[dateCol]); return !d||""+(d.getUTCMonth()+1)!==mo||""+d.getUTCFullYear()!==yr; })) { fail++; continue; } const tagged = rows.map(r => ({...r, _uMonth:mo, _uYear:yr})); if (type==="event") { evtB.push({rows:tagged,mo,yr}); fk.push("evt-"+yr+"-"+mo); } else { salB.push({rows:tagged,mo,yr}); fk.push("sal-"+yr+"-"+mo); } } catch { fail++; } }
-    setUploadState({status:"uploading",progress:100}); await new Promise(r=>setTimeout(r,200));
-    let eS=0,sS=0,eU=0,sU=0; const seenE = new Set(), seenS = new Set();
-    for (const b of evtB) { const k=b.yr+"-"+b.mo; if(events.some(r=>r._uMonth===b.mo&&r._uYear===b.yr)||seenE.has(k)) eU++; else eS++; seenE.add(k); }
-    for (const b of salB) { const k=b.yr+"-"+b.mo; if(sales.some(r=>r._uMonth===b.mo&&r._uYear===b.yr)||seenS.has(k)) sU++; else sS++; seenS.add(k); }
-    if (evtB.length) setEvents(prev => { let r=[...prev]; for (const b of evtB) { r=r.filter(x=>!(x._uMonth===b.mo&&x._uYear===b.yr)); r.push(...b.rows); } return r; });
-    if (salB.length) setSales(prev => { let r=[...prev]; for (const b of salB) { r=r.filter(x=>!(x._uMonth===b.mo&&x._uYear===b.yr)); r.push(...b.rows); } return r; });
-    setFlashKeys(fk); const ok = eS+sS+eU+sU;
-    if (!ok) { setUploadState({status:"error",message:"Data upload failed"}); return; }
-    const parts = []; if(eS>0&&eU>0) parts.push("Event data added and updated"); else if(eS>0) parts.push("Event data added"); else if(eU>0) parts.push("Event data updated"); if(sS>0&&sU>0) parts.push("Sales data added and updated"); else if(sS>0) parts.push("Sales data added"); else if(sU>0) parts.push("Sales data updated"); if(fail>0) { parts.push(fail+" file"+(fail>1?"s":"")+" failed"); setUploadState({status:"partial",message:parts.join(" · ")}); } else { setUploadState({status:"success",message:parts.join(" · ")}); }
+    if (!files || !files.length) return;
+    setUploadState({ status: "uploading", progress: 0 });
+    try {
+      await new Promise(r => setTimeout(r, 50));
+      const rows = await parseCsv(files[0]);
+      const type = detectType(rows);
+      if (!type || !validateRows(rows, type)) { setUploadState({ status: "error", message: "Upload failed" }); return; }
+      const dateCol = type === "event" ? "Event Date" : "Sale Date";
+      const monthGroups = {};
+      for (const row of rows) {
+        const d = parseD(row[dateCol]);
+        if (!d) { setUploadState({ status: "error", message: "Upload failed" }); return; }
+        const mo = "" + (d.getUTCMonth() + 1), yr = "" + d.getUTCFullYear(), k = yr + ":" + mo;
+        if (!monthGroups[k]) monthGroups[k] = { mo, yr, rows: [] };
+        monthGroups[k].rows.push(row);
+      }
+      setUploadState({ status: "uploading", progress: 100 });
+      await new Promise(r => setTimeout(r, 200));
+      const existingData = type === "event" ? events : sales;
+      let newData = [...existingData], totalAdded = 0, totalDuplicates = 0;
+      const fk = [];
+      for (const { mo, yr, rows: incoming } of Object.values(monthGroups)) {
+        const existing = newData.filter(r => r._uMonth === mo && r._uYear === yr);
+        const sigs = new Set(existing.map(r => { const { _uMonth, _uYear, ...rest } = r; return JSON.stringify(rest); }));
+        let monthAdded = 0;
+        for (const row of incoming) {
+          const sig = JSON.stringify(row);
+          if (sigs.has(sig)) { totalDuplicates++; } else { newData.push({ ...row, _uMonth: mo, _uYear: yr }); sigs.add(sig); totalAdded++; monthAdded++; }
+        }
+        if (monthAdded > 0) fk.push((type === "event" ? "evt-" : "sal-") + yr + "-" + mo);
+      }
+      if (type === "event") setEvents(newData); else setSales(newData);
+      setFlashKeys(fk);
+      const label = type === "event" ? "Event data added" : "Sales data added";
+      const dupWord = totalDuplicates === 0 ? "found" : "skipped";
+      setUploadState({ status: "success", message: `${label}: ${totalAdded} row${totalAdded !== 1 ? "s" : ""} added · ${totalDuplicates} duplicate${totalDuplicates !== 1 ? "s" : ""} ${dupWord}` });
+    } catch { setUploadState({ status: "error", message: "Upload failed" }); }
   }, [events, sales]);
 
   const allEventsGrouped = useMemo(() => groupEvents(events), [events]);
