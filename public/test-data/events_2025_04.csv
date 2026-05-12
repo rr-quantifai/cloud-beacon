@@ -6,3 +6,7 @@ Event Date,Event Name,Event Type,Event Venue,Product,Country,Provider,Partner ID
 2025-04-08,ABC 123,Online,Cloud Champion,Security,Oman,Microsoft,A123,ABC 123 LLC,John Doe,Yes
 2025-04-08,ABC 123,Online,Cloud Champion,AI,Qatar,Microsoft,A123,ABC 123 LLC,John Doe,Yes
 2025-04-08,ABC 123,Online,Cloud Champion,AI,UAE,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,GCC,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,ME,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,MEA,Microsoft,A123,ABC 123 LLC,John Doe,Yes
+2025-04-08,ABC 123,Online,Cloud Champion,AI,MENA,Microsoft,A123,ABC 123 LLC,John Doe,Yes

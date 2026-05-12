@@ -664,21 +664,18 @@ if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed
       setUploadState({ status: "uploading", progress: 100 });
       await new Promise(r => setTimeout(r, 200));
       const existingData = type === "event" ? events : sales;
-      let newData = [...existingData], totalAdded = 0, totalDuplicates = 0;
+      let newData = [...existingData], totalAdded = 0;
       const fk = [];
       for (const { mo, yr, rows: incoming } of Object.values(monthGroups)) {
-        const existing = newData.filter(r => r._uMonth === mo && r._uYear === yr);
-        const sigs = new Set(existing.map(r => { const { _uMonth, _uYear, ...rest } = r; return JSON.stringify(rest); }));
-        let monthAdded = 0;
         for (const row of incoming) {
-          const sig = JSON.stringify(row);
-          if (sigs.has(sig)) { totalDuplicates++; } else { newData.push({ ...row, _uMonth: mo, _uYear: yr }); sigs.add(sig); totalAdded++; monthAdded++; }
+          newData.push({ ...row, _uMonth: mo, _uYear: yr });
+          totalAdded++;
         }
-        if (monthAdded > 0) fk.push((type === "event" ? "evt-" : "sal-") + yr + "-" + mo);
+        if (incoming.length > 0) fk.push((type === "event" ? "evt-" : "sal-") + yr + "-" + mo);
       }
       if (type === "event") setEvents(newData); else setSales(newData);
       setFlashKeys(fk);
-      setUploadState({ status: "success", message: `Upload successful · ${totalAdded} row${totalAdded !== 1 ? "s" : ""} · ${totalDuplicates} duplicate${totalDuplicates !== 1 ? "s" : ""} · ${totalBlanks} blank${totalBlanks !== 1 ? "s" : ""}` });
+      setUploadState({ status: "success", message: `Upload successful · ${totalAdded} row${totalAdded !== 1 ? "s" : ""} · ${totalBlanks} blank${totalBlanks !== 1 ? "s" : ""}` });
     } catch (e) { console.log("caught error:", e); setUploadState({ status: "error", message: "Upload failed" }); }
   }, [events, sales]);
 
