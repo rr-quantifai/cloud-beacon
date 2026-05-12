@@ -638,6 +638,7 @@ function App() {
 
   const handleUpload = useCallback(async (files) => {
     if (!files || !files.length) return;
+console.log("handleUpload called");
     setUploadState({ status: "uploading", progress: 0 });
     try {
       await new Promise(r => setTimeout(r, 50));
@@ -677,7 +678,7 @@ const rows = type === "event" ? allRows.filter(r => (r["Partner ID"] || "").trim
       const label = type === "event" ? "Event data added" : "Sales data added";
       const dupWord = totalDuplicates === 0 ? "found" : "skipped";
       setUploadState({ status: "success", message: `${label}: ${totalAdded} row${totalAdded !== 1 ? "s" : ""} added · ${totalDuplicates} duplicate${totalDuplicates !== 1 ? "s" : ""} ${dupWord}` });
-    } catch { setUploadState({ status: "error", message: "Upload failed" }); }
+    } catch (e) { console.log("caught error:", e); setUploadState({ status: "error", message: "Upload failed" }); }
   }, [events, sales]);
 
   const allEventsGrouped = useMemo(() => groupEvents(events), [events]);
