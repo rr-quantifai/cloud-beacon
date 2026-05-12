@@ -645,14 +645,14 @@ try {
   await new Promise(r => setTimeout(r, 50));
   const allRows = await parseCsv(file);
       const type = detectType(allRows);
+const isBlank = v => !v.trim() || ["na", "n/a", "#n/a", "#na"].includes(v.trim().toLowerCase());
+const rows = allRows.filter(r => !Object.values(r).some(isBlank));
+const totalBlanks = allRows.length - rows.length;
 console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
 const valid = type ? validateRows(rows, type) : false;
 console.log("valid:", valid);
 if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed" }); return; }
       const dateCol = type === "event" ? "Event Date" : "Sale Date";
-const isBlank = v => !v.trim() || ["na", "n/a", "#n/a", "#na"].includes(v.trim().toLowerCase());
-const rows = allRows.filter(r => !Object.values(r).some(isBlank));
-const totalBlanks = allRows.length - rows.length;
       const monthGroups = {};
       for (const row of rows) {
         const d = parseD(row[dateCol]);
