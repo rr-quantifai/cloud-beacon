@@ -117,9 +117,9 @@ const calcBaselines = (group, idx, mode, fwdN, lag, vm) => {
   let bF = 0, bY = 0, bI = 0;
   for (const pid of group.nonAttendingPartners) { bF += sum(pid, fwd); if (yoyAvail) bY += sum(pid, yoy); if (immAvail) bI += sum(pid, imm); }
   return {
-  yoy: yoyAvail ? (bY > 0 ? bF / bY : (bF > 0 ? Infinity : null)) : null,
-  imm: immAvail ? (bI > 0 ? bF / bI : (bF > 0 ? Infinity : null)) : null
-};
+    yoy: yoyAvail ? (bY > 0 ? bF / bY : (bF > 0 ? Infinity : null)) : null,
+    imm: immAvail ? (bI > 0 ? bF / bI : (bF > 0 ? Infinity : null)) : null
+  };
 };
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -638,20 +638,20 @@ function App() {
 
   const handleUpload = useCallback(async (files) => {
     if (!files || !files.length) return;
-console.log("handleUpload called");
+    console.log("handleUpload called");
     const file = files[0];
-setUploadState({ status: "uploading", progress: 0 });
-try {
-  await new Promise(r => setTimeout(r, 50));
-  const allRows = await parseCsv(file);
+    setUploadState({ status: "uploading", progress: 0 });
+    try {
+      await new Promise(r => setTimeout(r, 50));
+      const allRows = await parseCsv(file);
       const type = detectType(allRows);
-const isBlank = v => !v.trim() || ["na", "n/a", "#n/a", "#na"].includes(v.trim().toLowerCase());
-const rows = allRows.filter(r => !Object.values(r).some(isBlank));
-const totalBlanks = allRows.length - rows.length;
-console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
-const valid = type ? validateRows(rows, type) : false;
-console.log("valid:", valid);
-if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed" }); return; }
+      const isBlank = v => !v.trim() || ["na", "n/a", "#n/a", "#na"].includes(v.trim().toLowerCase());
+      const rows = allRows.filter(r => !Object.values(r).some(isBlank));
+      const totalBlanks = allRows.length - rows.length;
+      console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
+      const valid = type ? validateRows(rows, type) : false;
+      console.log("valid:", valid);
+      if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed" }); return; }
       const dateCol = type === "event" ? "Event Date" : "Sale Date";
       const monthGroups = {};
       for (const row of rows) {
