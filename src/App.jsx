@@ -236,7 +236,7 @@ const DateFilter = ({ tree, selected, onChange, placeholder }) => {
 /* ═══════════════════════════════════════════════════════════════════
    SECTION COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
-const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !payload.length) return null; const evts = payload[0]?.payload?._events; return (<div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs"><p className="font-semibold text-gray-700 mb-1.5">{fmtYM(label)}</p>{evts && evts.map((ev, i) => (<div key={"ev"+i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROD_COLORS[ev.product] || "#6b7280" }} /><span className="text-gray-500">{ev.name}:</span><span className="font-medium text-gray-800 ml-auto">{ev.product}</span></div>))}{payload.filter(p => p.value != null && p.value !== 0).map((p, i) => (<div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-gray-500">{p.name}:</span><span className="font-medium text-gray-800 ml-auto">{Number(p.value).toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>))}</div>); };
+const ChartTip = ({ active, payload, label }) => { if (!active || !payload || !payload.length) return null; const evts = payload[0]?.payload?._events; return (<div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs"><p className="font-semibold text-gray-700 mb-1.5">{fmtYM(label)}</p>{evts && evts.map((ev, i) => (<div key={"ev"+i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROD_COLORS[ev.product] || "#6b7280" }} /><span className="text-gray-500">{ev.name.length > 35 ? ev.name.slice(0, 35) + "…" : ev.name}:</span><span className="font-medium text-gray-800 ml-auto">{ev.product}</span></div>))}{payload.filter(p => p.value != null && p.value !== 0).map((p, i) => (<div key={i} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} /><span className="text-gray-500">{p.name}:</span><span className="font-medium text-gray-800 ml-auto">{Number(p.value).toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>))}</div>); };
 
 const UploadPanel = ({ uploadState, handleUpload, fileRef }) => {
   const st = uploadState?.status;
@@ -347,7 +347,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
           <DotNav count={2} active={lb1Page} onChange={setLb1Page}/>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {!lb1List.length?<p className="text-lg text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb1Page===0?lb1List.map(e=>{const val=isImp(lb1View)?formatImpact(lb1View==="yoy"?e.ratioYoY:e.ratioIMM,true):null;return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:e.totalPartners}</span></div>;}):lb1List.map(p=>{const name=globalNameMap[p.pid];const val=isImp(lb1View)?formatImpact(p.ratio,true):null;return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:p.events}</span></div>;})}</div>)}
+          {!lb1List.length?<p className="text-lg text-gray-400">—</p>:(<div className="flex flex-col divide-y divide-gray-100">{lb1Page===0?lb1List.map(e=>{const val=isImp(lb1View)?formatImpact(lb1View==="yoy"?e.ratioYoY:e.ratioIMM,true):null;return <div key={e.key} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium">{e.eventName.length > 40 ? e.eventName.slice(0, 40) + "…" : e.eventName}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{fmtDate(e.eventDate)}</span><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{e.product}</span></span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:e.totalPartners}</span></div>;}):lb1List.map(p=>{const name=globalNameMap[p.pid];const val=isImp(lb1View)?formatImpact(p.ratio,true):null;return <div key={p.pid} className="flex items-center justify-between pt-1.5 last:pb-0 pb-1.5"><span className="text-xs text-gray-700 flex items-center gap-1 min-w-0"><span className="font-medium shrink-0">{p.pid}</span>{name&&<><span className="text-gray-300">·</span><span className="text-gray-500 truncate">{name}</span></>}</span><span className={"text-xs font-medium shrink-0 ml-2 "+(isImp(lb1View)?val.color:"text-blue-600")}>{isImp(lb1View)?val.text:p.events}</span></div>;})}</div>)}
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 h-[128px] flex flex-col">
@@ -405,7 +405,7 @@ const EventTable = ({ sortedGrouped, tableOvr, nameQ, currentMatchKey, focusPage
       const iY = formatImpact(g.ratioYoY, yoyOk), iI = formatImpact(g.ratioIMM, immOk);
       const bY = formatImpact(g.baselineYoY, yoyOk), bI = formatImpact(g.baselineIMM, immOk);
       return(<tr key={g.key} className="hover:bg-gray-50 transition">
-        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{HL(g.eventName, nameQ?.trim(), g.key === currentMatchKey)}</td>
+        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{HL(g.eventName.length > 50 ? g.eventName.slice(0, 50) + "…" : g.eventName, nameQ?.trim(), g.key === currentMatchKey)}</td>
         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(g.eventDate)}</td>
         <td className="px-4 py-3"><Badge text={g.product} className={PROD_BADGE[g.product] || "bg-gray-100 text-gray-700"}/></td>
         <td className="px-4 py-3"><Badge text={g.eventType} className={g.eventType==="Online"?"bg-cyan-100 text-cyan-700":"bg-orange-100 text-orange-700"}/></td>
@@ -467,7 +467,7 @@ const PartnerModal = ({ modal, salesIndex, sales, events, analysisMode, valueMod
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e=>e.stopPropagation()}>
         <div className="px-6 py-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
           <div className="min-w-0 mr-4">
-            <h2 className="text-base font-bold text-gray-900">{modal.eventName}</h2>
+            <h2 className="text-base font-bold text-gray-900">{modal.eventName.length > 60 ? modal.eventName.slice(0, 60) + "…" : modal.eventName}</h2>
             <p className="text-xs text-gray-400 truncate">{fmtDate(modal.eventDate)} · {modal.product} · {modal.totalPartners} partner{modal.totalPartners !== 1 ? "s" : ""}</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -643,7 +643,10 @@ function App() {
       await new Promise(r => setTimeout(r, 50));
       const allRows = await parseCsv(files[0]);
       const type = detectType(allRows);
-      if (!type || !validateRows(allRows, type)) { setUploadState({ status: "error", message: "Upload failed" }); return; }
+console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
+const valid = type ? validateRows(allRows, type) : false;
+console.log("valid:", valid);
+if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed" }); return; }
       const dateCol = type === "event" ? "Event Date" : "Sale Date";
 const rows = type === "event" ? allRows.filter(r => (r["Partner ID"] || "").trim()) : allRows;
       const monthGroups = {};
