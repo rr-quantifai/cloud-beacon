@@ -639,10 +639,11 @@ function App() {
   const handleUpload = useCallback(async (files) => {
     if (!files || !files.length) return;
 console.log("handleUpload called");
-    setUploadState({ status: "uploading", progress: 0 });
-    try {
-      await new Promise(r => setTimeout(r, 50));
-      const allRows = await parseCsv(files[0]);
+    const file = files[0];
+setUploadState({ status: "uploading", progress: 0 });
+try {
+  await new Promise(r => setTimeout(r, 50));
+  const allRows = await parseCsv(file);
       const type = detectType(allRows);
 console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
 const valid = type ? validateRows(allRows, type) : false;
