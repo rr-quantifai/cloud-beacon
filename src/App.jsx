@@ -48,8 +48,8 @@ const detectType = (rows) => { if (!rows || !rows.length) return null; const h =
 const VALID_PRODUCTS = new Set(["AI", "BizApps", "Cloud", "Modern Work", "Security"]);
 const VALID_EVENT_TYPES = new Set(["Online", "Offline"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const SALE_VALUE_RE = /^\d+(\.\d+)?$/;
-const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; if (!SALE_VALUE_RE.test(r["Sale Value"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
+const SALE_VALUE_RE = /^-?\d+(\.\d+)?$/;
+const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; const val = r["Sale Value"]; if (val !== "" && !SALE_VALUE_RE.test(val)) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
 const makeDateStr = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 const MIN_DESKTOP = 1024;
 
@@ -618,7 +618,7 @@ function App() {
       if (pid) {
         const pmk = pid + "|||" + ym; byPM.set(pmk, (byPM.get(pmk) || 0) + v);
         const ppk = pid + "|||" + prod + "|||" + ym; byPPM.set(ppk, (byPPM.get(ppk) || 0) + v);
-        if (cust) {
+        if (cust && v > 0) {
           if (!csPM.has(pmk)) csPM.set(pmk, new Set()); csPM.get(pmk).add(cust);
           if (!csPPM.has(ppk)) csPPM.set(ppk, new Set()); csPPM.get(ppk).add(cust);
         }
@@ -641,10 +641,11 @@ function App() {
     setUploadState({ status: "uploading", progress: 0 });
     try {
       await new Promise(r => setTimeout(r, 50));
-      const rows = await parseCsv(files[0]);
-      const type = detectType(rows);
-      if (!type || !validateRows(rows, type)) { setUploadState({ status: "error", message: "Upload failed" }); return; }
+      const allRows = await parseCsv(files[0]);
+      const type = detectType(allRows);
+      if (!type || !validateRows(allRows, type)) { setUploadState({ status: "error", message: "Upload failed" }); return; }
       const dateCol = type === "event" ? "Event Date" : "Sale Date";
+const rows = type === "event" ? allRows.filter(r => (r["Partner ID"] || "").trim()) : allRows;
       const monthGroups = {};
       for (const row of rows) {
         const d = parseD(row[dateCol]);
