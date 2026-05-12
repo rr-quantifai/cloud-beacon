@@ -49,7 +49,7 @@ const VALID_PRODUCTS = new Set(["AI", "BizApps", "Cloud", "Modern Work", "Securi
 const VALID_EVENT_TYPES = new Set(["Online", "Offline"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SALE_VALUE_RE = /^-?\d+(\.\d+)?$/;
-const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; const val = r["Sale Value"]; if (val !== "" && !SALE_VALUE_RE.test(val)) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
+const validateRows = (rows, type) => { for (const r of rows) { if (type === "event") { if (!DATE_RE.test(r["Event Date"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; if (!VALID_EVENT_TYPES.has(r["Event Type"])) return false; const att = (r["Attendance"] || "").toLowerCase(); if (att !== "yes" && att !== "no") return false; } else { if (!DATE_RE.test(r["Sale Date"])) return false; if (!SALE_VALUE_RE.test(r["Sale Value"])) return false; if (!VALID_PRODUCTS.has(r["Product"])) return false; } } return true; };
 const makeDateStr = (y, m, d) => y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
 const MIN_DESKTOP = 1024;
 
@@ -646,11 +646,13 @@ try {
   const allRows = await parseCsv(file);
       const type = detectType(allRows);
 console.log("rows:", allRows.length, "type:", type, "headers:", Object.keys(allRows[0] || {}));
-const valid = type ? validateRows(allRows, type) : false;
+const valid = type ? validateRows(rows, type) : false;
 console.log("valid:", valid);
 if (!type || !valid) { setUploadState({ status: "error", message: "Upload failed" }); return; }
       const dateCol = type === "event" ? "Event Date" : "Sale Date";
-const rows = type === "event" ? allRows.filter(r => (r["Partner ID"] || "").trim()) : allRows;
+const isBlank = v => !v.trim() || ["na", "n/a", "#n/a", "#na"].includes(v.trim().toLowerCase());
+const rows = allRows.filter(r => !Object.values(r).some(isBlank));
+const totalBlanks = allRows.length - rows.length;
       const monthGroups = {};
       for (const row of rows) {
         const d = parseD(row[dateCol]);
@@ -676,9 +678,7 @@ const rows = type === "event" ? allRows.filter(r => (r["Partner ID"] || "").trim
       }
       if (type === "event") setEvents(newData); else setSales(newData);
       setFlashKeys(fk);
-      const label = type === "event" ? "Event data added" : "Sales data added";
-      const dupWord = totalDuplicates === 0 ? "found" : "skipped";
-      setUploadState({ status: "success", message: `${label}: ${totalAdded} row${totalAdded !== 1 ? "s" : ""} added · ${totalDuplicates} duplicate${totalDuplicates !== 1 ? "s" : ""} ${dupWord}` });
+      setUploadState({ status: "success", message: `Upload successful · ${totalAdded} row${totalAdded !== 1 ? "s" : ""} · ${totalDuplicates} duplicate${totalDuplicates !== 1 ? "s" : ""} · ${totalBlanks} blank${totalBlanks !== 1 ? "s" : ""}` });
     } catch (e) { console.log("caught error:", e); setUploadState({ status: "error", message: "Upload failed" }); }
   }, [events, sales]);
 
