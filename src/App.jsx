@@ -43,7 +43,7 @@ const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","D
 const PROD_COLORS = { AI: "#8b5cf6", BizApps: "#059669", Cloud: "#3b82f6", "Modern Work": "#ec4899", Security: "#f59e0b" };
 const PROD_BADGE = { AI: "bg-purple-100 text-purple-700", BizApps: "bg-emerald-100 text-emerald-700", Cloud: "bg-blue-100 text-blue-700", "Modern Work": "bg-pink-100 text-pink-700", Security: "bg-amber-100 text-amber-700" };
 const EVENT_HEADERS = ["Event Date","Event Name","Event Type","Event Venue","Product","Country","Provider","Partner ID","Partner Name","Attendee Name","Attendance"];
-const SALES_HEADERS = ["Sale Date","Sale Value","Product","Partner ID","Customer Name"];
+const SALES_HEADERS = ["Sale Date","Sale Value","Contract ID","Product","Partner ID","Customer Name"];
 const detectType = (rows) => { if (!rows || !rows.length) return null; const h = Object.keys(rows[0]).map(k => k.trim().toLowerCase()); if (h.length === EVENT_HEADERS.length && EVENT_HEADERS.every((e, i) => h[i].toLowerCase() === e.toLowerCase())) return "event"; if (h.length === SALES_HEADERS.length && SALES_HEADERS.every((e, i) => h[i].toLowerCase() === e.toLowerCase())) return "sales"; return null; };
 const VALID_PRODUCTS = new Set(["AI", "BizApps", "Cloud", "Modern Work", "Security"]);
 const VALID_EVENT_TYPES = new Set(["Online", "Offline"]);
@@ -363,7 +363,7 @@ const SummaryCards = ({ summaryData, topPartnersData, globalNameMap }) => {
   );
 };
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 25;
 
 const EventTable = ({ sortedGrouped, tableOvr, nameQ, currentMatchKey, focusPage, sortCol, toggleSort, openModal }) => {
   const [page, setPage] = useState(0);
